@@ -2,9 +2,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "private-ai.fullname" . }}
+  name: {{ include "limina.fullname" . }}
   labels:
-    {{- include "private-ai.labels" . | nindent 4 }}
+    {{- include "limina.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -17,7 +17,7 @@ spec:
         paths:
           - backend:
               service:
-                name: {{ include "private-ai.fullname" . }}
+                name: {{ include "limina.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
             path: "/"

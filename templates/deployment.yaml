@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "private-ai.fullname" . }}
+  name: {{ include "limina.fullname" . }}
   labels:
-    {{- include "private-ai.labels" . | nindent 4 }}
+    {{- include "limina.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
-      {{- include "private-ai.selectorLabels" . | nindent 6 }}
+      {{- include "limina.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.deployment.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "private-ai.selectorLabels" . | nindent 8 }}
+        {{- include "limina.selectorLabels" . | nindent 8 }}
     spec:
       imagePullSecrets:
       {{- if .Values.externalsecrets.enabled }}
