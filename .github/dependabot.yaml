@@ -5,8 +5,24 @@ updates:
       - "/"
     open-pull-requests-limit: 20
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Toronto"
     groups:
       helm-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Toronto"
+    cooldown:
+      default-days: 7
+    groups:
+      actions-packages:
         patterns:
           - "*"
