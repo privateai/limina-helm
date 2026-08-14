@@ -1,3 +1,4 @@
-/.github/CODEOWNERS kory.fong@getlimina.ai
+# CODEOWNERS
+/.github/CODEOWNERS kory.fong@private-ai.com
 
-bryan@getlimina.ai aaron@getlimina.ai
+* @privateai/internal-apps
