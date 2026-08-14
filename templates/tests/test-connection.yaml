@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: '{{ include "private-ai.fullname" . }}-test-connection'
+  name: '{{ include "limina.fullname" . }}-test-connection'
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "private-ai.labels" . | nindent 4 }}
+    {{- include "limina.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
 spec:
@@ -15,5 +15,5 @@ spec:
         - name: wget
           image: busybox
           command: ['wget']
-          args: ['{{ include "private-ai.fullname" . }}:{{ .Values.service.port }}']
+          args: ['{{ include "limina.fullname" . }}:{{ .Values.service.port }}']
       restartPolicy: Never

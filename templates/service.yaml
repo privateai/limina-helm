@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "private-ai.fullname" . }}
+  name: {{ include "limina.fullname" . }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
-    {{- include "private-ai.labels" . | nindent 4 }}
+    {{- include "limina.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -16,4 +16,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "private-ai.selectorLabels" . | nindent 4 }}
+    {{- include "limina.selectorLabels" . | nindent 4 }}

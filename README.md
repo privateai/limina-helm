@@ -1,26 +1,25 @@
-# Private AI Helm Chart
+# Limina Helm Chart
 
-This infrastructure as code project is suitable for a development environment release of the Private AI product.
-Feel free to use this Helm chart as a boilerplate for your Private AI container deployment.
+This helm chart simplifies the deployment of the Limina product into your kubernetes environment.
 
-Please keep in mind that for deployments requiring a public facing endpoint, you will need to provide your own cerificate / deployment configurations. This Helm chart is meant to help you get started with your deployment, and is NOT ready to be used directly for a production deployment.
+Please keep in mind that for deployments requiring a public facing endpoint, you will need to provide your own certificate / deployment configurations.
 
 ## Prerequisites
 
-- You must have a valid Private AI license file and docker credentials. If you do not have both, please [contact us](https://www.private-ai.com/en/company/contact-us)
+- You must have a valid Limina license file and docker credentials. You can retrieve these from the Limina (Customer Portal)[https://portal.getlimina.ai]. If you have any issues, please [contact us](https://www.getlimina.ai/en/contact-us)
 - You must have an existing kubernetes cluster
 - Helm version 4.0.0 or greater
 
-## Installing the chart
+## Quickstart
 
-To install the Private AI chart, follow the steps below
+To install the Limina chart, follow the steps below
 
 ```console
-# Create a namespace in your cluster for the private-ai deployment
-kubectl create namespace private-ai
+# Create a namespace in your cluster for the limina deployments
+kubectl create namespace limina
 
 # Create a secret with your docker credentials from the customer portal
-kubectl -n private-ai create secret docker-registry crprivateaiprod-creds \
+kubectl -n limina create secret docker-registry crprivateaiprod-creds \
   --docker-server=crprivateaiprod.azurecr.io \
   --docker-username=USERNAME \
   --docker-password=PASSWORD
@@ -29,45 +28,45 @@ kubectl -n private-ai create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/private-ai:1.7.0 > values.custom.yaml
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.0.1 > values.custom.yaml
 
 # Copy your license.json file contents and paste them into the license.data section of the values.custom.yaml file with single quotes surrounding, as per below
 license:
   data: '{"id":"..."}'
 
-# Upgrade or install the Private AI chart with a name and namespace of private-ai
+# Install the limina chart with a name and namespace of limina
 helm upgrade --install \
-  private-ai oci://crprivateaiprod.azurecr.io/helm/private-ai \
-  --namespace private-ai \
+  limina oci://crprivateaiprod.azurecr.io/helm/limina \
+  --namespace limina \
   -f values.custom.yaml \
-  --version 1.7.0
+  --version 0.0.1
 ```
 
 ## Testing
 
-To test the Private AI container is functional, follow the steps below.
+To test the Limina container is functional, follow the steps below.
 
 ```console
-helm test --namespace private-ai private-ai
+helm test --namespace limina limina
 ```
 
 ## Uninstall
 
-To uninstall the Private AI container, follow the steps below.
+To uninstall the Limina container, follow the steps below.
 
 ```console
-helm uninstall --namespace private-ai private-ai
+helm uninstall --namespace limina limina
 ```
 
 ## Additional Configuration
 To customize your deployment, enable different sections of your values.yaml file as per the documentation below.
 
 ### Ingress Controller
-If you would like to set up an external ingress to enable external traffic to reach your the Private AI deployment, you must enable the haproxy-ingress and cert-manager helm charts in the values.yaml file. Additionally, a sample ingress deployment file is included, and can be deployed with self-signed certificates for testing.
+If you would like to set up an external ingress to enable external traffic to reach the Limina deployment, you must enable the haproxy-ingress and cert-manager helm charts in the values.yaml file. Additionally, a sample ingress deployment file is included, and can be deployed with self-signed certificates for testing.
 
 If you would like to deploy your own certificate issuer and certificates, please see the [cert-manager docs](https://cert-manager.io/docs/).
 
-The haproxy-ingress configuration required to host a certificate and manage incoming traffic from the ingress to the Private AI deployment is included with the chart. For more advanced configuration, please see the [haproxy-ingress docs](https://haproxy-ingress.github.io/docs/getting-started/).
+The haproxy-ingress configuration required to host a certificate and manage incoming traffic from the ingress to the Limina deployment is included with the chart. For more advanced configuration, please see the [haproxy-ingress docs](https://haproxy-ingress.github.io/docs/getting-started/).
 
 Note: The haproxy-ingress and cert-manager helm charts are not listed as dependencies in this chart, and must be installed separately prior to installation.
 
@@ -80,7 +79,7 @@ helm upgrade --install \
   cert-manager oci://quay.io/jetstack/charts/cert-manager \
   --namespace cert-manager \
   --set crds.enabled=true \
-  --set clusterResourceNamespace=private-ai
+  --set clusterResourceNamespace=limina
 
 # Required webhook settings if deploying to AWS with the VPC-CNI plugin
 #  --set webhook.hostNetwork=true \
@@ -104,12 +103,12 @@ helm upgrade --install \
 
 # Update your values.custom.yaml file with the appropriate values under ingress
 
-# Proceed with installing / upgrading private-ai via helm into the private-ai namespace
+# Proceed with installing limina via helm into the limina namespace
 helm upgrade --install \
-  private-ai oci://crprivateaiprod.azurecr.io/helm/private-ai \
-  --namespace private-ai \
+  limina oci://crprivateaiprod.azurecr.io/helm/limina \
+  --namespace limina \
   -f values.custom.yaml \
-  --version 1.7.0
+  --version 0.0.1
 ```
 
 ### External Secrets Operator
@@ -118,38 +117,38 @@ If you would like to store you license file and docker credentials in an externa
 Note: The External Secrets chart is not listed as a dependency in this chart, and must be installed separately prior to installation.
 
 ```console
-# Create a namespace in your cluster for the private-ai deployment
-kubectl create namespace private-ai
+# Create a namespace in your cluster for the limina deployment
+kubectl create namespace limina
 
 # Add the External Secrets helm repo
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo update
 
-# Upgrade or install the External Secrets operator into the private-ai namespace
+# Upgrade or install the External Secrets operator into the limina namespace
 helm upgrade --install \
   external-secrets external-secrets/external-secrets \
-  --namespace private-ai
+  --namespace limina
 
-# Create two secrets, one for the license file and one for the docker credentials, in your external secret store of choice. You can optionally create a secret for environment variables to configure the Private AI container.
+# Create two secrets, one for the license file and one for the docker credentials, in your external secret store of choice. You can optionally create a secret for environment variables to configure the Limina container.
 ```
 
 #### AWS Secrets Manager Steps
-Example AWS secret for Private AI license file
+Example AWS secret for Limina license file
 ![license-type](./images/aws-license-type.png)
 ![license-name](./images/aws-license-name.png)
-Example AWS secret for Private AI docker credentials
+Example AWS secret for Limina docker credentials
 ![docker-type](./images/aws-docker-type.png)
 ![docker-name](./images/aws-docker-name.png)
-Example AWS secret for Private AI environment variables
+Example AWS secret for Limina environment variables
 This is optional, and can be enabled or disabled in the values file.
 ![env-type](./images/aws-env-type.png)
 ![env-name](./images/aws-env-name.png)
 
 Next, configure the AWS Secret Store. See [the AWS Secrets Manager docs](https://external-secrets.io/latest/provider/aws-secrets-manager/) for detailed instructions.
 ```console
-# Create a secret-store within the private-ai namespace
+# Create a secret-store within the limina namespace
 # Example AWS secret store based on access key:
-kubectl create secret -n private-ai generic awssm-secret --from-file=./access-key --from-file=./secret-access-key
+kubectl create secret -n limina generic awssm-secret --from-file=./access-key --from-file=./secret-access-key
 kubectl apply -f aws-secret-store.yaml
 ```
 ```yaml
@@ -158,7 +157,7 @@ apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: secret-store
-  namespace: private-ai
+  namespace: limina
 spec:
   provider:
     aws:
@@ -167,25 +166,25 @@ spec:
       auth:
         secretRef:
           accessKeyIDSecretRef:
-            namespace: private-ai
+            namespace: limina
             name: awssm-secret
             key: access-key
           secretAccessKeySecretRef:
-            namespace: private-ai
+            namespace: limina
             name: awssm-secret
             key: secret-access-key
 ```
 #### Azure Key Vault Steps
 Note: Azure does not allow for multiple key-value pairs per secret entry. To match the data structure of the External Secrets Operator, each secret must be uploaded as a JSON object, with the key matching the property from the values file.
 
-Example Azure secret for Private AI license file
+Example Azure secret for Limina license file
 ![license-name](./images/azure-license-name.png)
 ```json
 {
   "license.json": { "id": 1, "tier": "..." }
 }
 ```
-Example Azure secret for Private AI docker credentials
+Example Azure secret for Limina docker credentials
 ![docker-name](./images/azure-docker-name.png)
 ```json
 {
@@ -194,7 +193,7 @@ Example Azure secret for Private AI docker credentials
   "password": "docker-password"
 }
 ```
-Example Azure secret for Private AI environment variables
+Example Azure secret for Limina environment variables
 This is optional, and can be enabled or disabled in the values file.
 ![env-name](./images/azure-env-name.png)
 ```json
@@ -235,7 +234,7 @@ metadata:
     azure.workload.identity/client-id: ${USER_ASSIGNED_IDENTITY_CLIENT_ID}
     azure.workload.identity/tenant-id: ${USER_ASSIGNED_IDENTITY_TENANT_ID}
   name: azure-keyvault
-  namespace: private-ai
+  namespace: limina
 EOF
 
 # Create federated credential
@@ -244,7 +243,7 @@ az identity federated-credential create \
   --identity-name $USER_ASSIGNED_IDENTITY_NAME \
   --resource-group $RESOURCE_GROUP \
   --issuer $(az aks show --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER_NAME --query "oidcIssuerProfile.issuerUrl" -o tsv) \
-  --subject "system:serviceaccount:private-ai:azure-keyvault"
+  --subject "system:serviceaccount:limina:azure-keyvault"
 
 # Create the secret store
 cat <<EOF | kubectl apply -f -
@@ -252,7 +251,7 @@ apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: azure-backend
-  namespace: private-ai
+  namespace: limina
 spec:
   provider:
     azurekv:
@@ -273,10 +272,10 @@ externalsecrets:
 
 Proceed with installing the helm chart
 ```console
-# Proceed with installing / upgrading private-ai via helm into the private-ai namespace
+# Proceed with installing / upgrading limina via helm into the limina namespace
 helm upgrade --install \
-  private-ai oci://crprivateaiprod.azurecr.io/helm/private-ai \
-  --namespace private-ai \
+  limina oci://crprivateaiprod.azurecr.io/helm/limina \
+  --namespace limina \
   -f values.custom.yaml \
-  --version 1.7.0
+  --version 0.0.1
 ```
