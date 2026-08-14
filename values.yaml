@@ -1,5 +1,5 @@
 # Select a cloud provider. Must be one of "Azure", "AWS", or "Other"
-cloudProvider: "Azure"
+cloudProvider: "AWS"
 
 # Override the default name of the application, used in the helper script to populate things like selector labels
 nameOverride: ""
@@ -16,7 +16,7 @@ deployment:
     pullPolicy: "IfNotPresent"
     # Can be a direct version tag / container flavour (i.e. 4.0.4-cpu-text) OR a 'latest' tag (i.e. cpu, cpu-text, gpu, gpu-text)
     # It is recommended to pin to a specific version for production environments
-    tag: "4.4.4-cpu"
+    tag: "4.4.1-cpu"
 
   # Change this to true if you have a cluster that has nodes with Nvidia GPUs available and would like to run the GPU container
   gpuEnabled: false
@@ -96,67 +96,67 @@ deployment:
   nodeAffinity:
     enabled: false
     values: {}
-  # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
-  # and after on nodes with the label "limina"
-  # values:
-  #   preferredDuringSchedulingIgnoredDuringExecution:
-  #     - preference:
-  #         matchExpressions:
-  #           - key: "nodetype"
-  #             operator: "In"
-  #             values:
-  #               - "limina"
-  #       weight: 1
-  #     - preference:
-  #         matchExpressions:
-  #           - key: "nodetype"
-  #             operator: "In"
-  #             values:
-  #               - "limina-spot"
-  #       weight: 100
+    # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+    # and after on nodes with the label "limina"
+    # values:
+    #   preferredDuringSchedulingIgnoredDuringExecution:
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina"
+    #       weight: 1
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina-spot"
+    #       weight: 100
 
   podAntiAffinity:
     enabled: false
     values: {}
-  # Recommended configuration to ensure only one Limina container is scheduled per node:
-  # values:
-  #   requiredDuringSchedulingIgnoredDuringExecution:
-  #     - labelSelector:
-  #         matchExpressions:
-  #           - key: "app.kubernetes.io/name"
-  #             operator: "In"
-  #             values:
-  #               - "limina"
-  #           - key: "app.kubernetes.io/instance"
-  #             operator: "In"
-  #             values:
-  #               - "limina"
-  #       topologyKey: "kubernetes.io/hostname"
+    # Recommended configuration to ensure only one Limina container is scheduled per node:
+    # values:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     - labelSelector:
+    #         matchExpressions:
+    #           - key: "app.kubernetes.io/name"
+    #             operator: "In"
+    #             values:
+    #               - "limina"
+    #           - key: "app.kubernetes.io/instance"
+    #             operator: "In"
+    #             values:
+    #               - "limina"
+    #       topologyKey: "kubernetes.io/hostname"
 
   topologySpreadConstraints:
     enabled: false
     values: []
-  # Use the following if you would like to spread your pods evenly across your infrastructure zones
-  # values:
-  #   - labelSelector:
-  #       matchLabels:
-  #         app.kubernetes.io/name: "limina"
-  #         app.kubernetes.io/instance: "limina"
-  #     matchLabelKeys:
-  #       - "pod-template-hash"
-  #     maxSkew: 1
-  #     topologyKey: "topology.kubernetes.io/zone"
-  #     whenUnsatisfiable: "ScheduleAnyway"
+    # Use the following if you would like to spread your pods evenly across your infrastructure zones
+    # values:
+    #   - labelSelector:
+    #       matchLabels:
+    #         app.kubernetes.io/name: "limina"
+    #         app.kubernetes.io/instance: "limina"
+    #     matchLabelKeys:
+    #       - "pod-template-hash"
+    #     maxSkew: 1
+    #     topologyKey: "topology.kubernetes.io/zone"
+    #     whenUnsatisfiable: "ScheduleAnyway"
 
   tolerations:
     enabled: false
     values: []
-  # Use the following if you have added a taint to your nodes of app=limina
-  # values:
-  #   - key: app
-  #     operator: "Equal"
-  #     value: "limina"
-  #     effect: "NoSchedule"
+    # Use the following if you have added a taint to your nodes of app=limina
+    # values:
+    #   - key: app
+    #     operator: "Equal"
+    #     value: "limina"
+    #     effect: "NoSchedule"
 
   # There are the values for requests and limits
   # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
@@ -203,8 +203,8 @@ secrets:
   data: []
   # Enter any environment variables for your deployment you wish to remain secret. Example: https://docs.getlimina.ai/configuration-and-operations/advanced-features/azure-ocr
   # data:
-  # - name: "PAI_AZ_COMPUTER_VISION_KEY"
-  #   value: "keyvalue"
+  #   - name: "PAI_AZ_COMPUTER_VISION_KEY"
+  #     value: "keyvalue"
 
 # Specifies whether to deploy the kubernetes ingress
 # Requires haproxy-ingress and cert-manager to be installed
