@@ -15,5 +15,5 @@ spec:
         - name: wget
           image: busybox
           command: ['wget']
-          args: ['{{ include "limina.fullname" . }}:{{ .Values.service.port }}']
+          args: ['{{ include "limina.fullname" . }}:{{ .Values.core.service.port }}']
       restartPolicy: Never

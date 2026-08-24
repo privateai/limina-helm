@@ -1,29 +1,29 @@
-{{- if .Values.ingress.enabled }}
+{{- if .Values.core.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "limina.fullname" . }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- with .Values.core.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.core.ingress.ingressClassName }}
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: {{ .Values.core.ingress.host }}
       http:
         paths:
           - backend:
               service:
                 name: {{ include "limina.fullname" . }}
                 port:
-                  number: {{ .Values.service.port }}
+                  number: {{ .Values.core.service.port }}
             path: "/"
             pathType: "Prefix"
   tls:
     - hosts:
-      - {{ .Values.ingress.host }}
-      secretName: {{ .Values.ingress.tlsSecretName }}
+      - {{ .Values.core.ingress.host }}
+      secretName: {{ .Values.core.ingress.tlsSecretName }}
 {{- end }}

@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limina.fullname" . }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.core.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "limina.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.core.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "limina.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+      {{- if .Values.externalsecrets.enabled }}
+        - name: {{ .Values.externalsecrets.dockercredential.name }}
+      {{- else }}
+        - name: {{ .Values.core.deployment.imagePullSecrets.name }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}          
+          image: "{{ .Values.core.deployment.image.repository }}:{{ .Values.core.deployment.image.tag | default .Chart.AppVersion }}"
+          {{- if or .Values.core.deployment.limits.enabled .Values.core.deployment.requests.enabled .Values.core.deployment.gpuEnabled }}
+          resources:
+            {{- if or .Values.core.deployment.limits.enabled .Values.core.deployment.gpuEnabled }}
+            limits:
+              {{- if .Values.core.deployment.gpuEnabled }}
+              nvidia.com/gpu: 1
+              {{- end }}
+              memory: {{ .Values.core.deployment.limits.memory }}
+              cpu: {{ .Values.core.deployment.limits.cpu }}
+            {{- end }}
+            {{- if .Values.core.deployment.requests.enabled}}
+            requests:
+              memory: {{ .Values.core.deployment.requests.memory }}
+              cpu: {{ .Values.core.deployment.requests.cpu }}
+            {{- end }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.core.deployment.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.core.service.targetPort }}
+              protocol: TCP
+          {{- with .Values.core.deployment.envVars }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                {{- if .Values.externalsecrets.enabled }}
+                name: {{ .Values.externalsecrets.secrets.name }}
+                {{- else }}
+                name: {{ .Values.secrets.name }}
+                {{- end }}
+                optional: true
+          volumeMounts:
+            - name: {{ .Values.core.deployment.license.volumeMount }}
+              mountPath: /app/license
+          {{- if .Values.core.deployment.additionalMounts.enabled }}
+            {{- with .Values.core.deployment.additionalMounts.volumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.core.deployment.gpuEnabled }}
+            - name: dshm-volume
+              mountPath: /dev/shm
+          {{- end }}
+          {{- if .Values.core.deployment.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.core.service.targetPort }}
+              scheme: {{ .Values.core.deployment.livenessProbe.scheme }}
+            periodSeconds: {{ .Values.core.deployment.livenessProbe.periodSeconds }}
+            initialDelaySeconds: {{ .Values.core.deployment.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.core.deployment.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.core.deployment.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.core.deployment.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.core.service.targetPort }}
+              scheme: {{ .Values.core.deployment.startupProbe.scheme }}
+            periodSeconds: {{ .Values.core.deployment.startupProbe.periodSeconds }}
+            initialDelaySeconds: {{ .Values.core.deployment.startupProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.core.deployment.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.core.deployment.startupProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.core.deployment.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.core.service.targetPort }}
+              scheme: {{ .Values.core.deployment.readinessProbe.scheme }}
+            periodSeconds: {{ .Values.core.deployment.readinessProbe.periodSeconds }}
+            initialDelaySeconds: {{ .Values.core.deployment.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.core.deployment.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.core.deployment.readinessProbe.failureThreshold }}
+          {{- end }}
+      volumes:
+        - name: {{ .Values.core.deployment.license.volumeMount }}
+          secret:
+            {{- if .Values.externalsecrets.enabled }}
+            secretName: {{ .Values.externalsecrets.license.name }}
+            {{- else }}
+            secretName: {{ .Values.core.deployment.license.name }}
+            {{- end }}
+      {{- if .Values.core.deployment.additionalMounts.enabled }}
+        {{- with .Values.core.deployment.additionalMounts.volumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.core.deployment.gpuEnabled }}
+        - name: dshm-volume
+          emptyDir:
+            medium: Memory
+      {{- end }}
+
+      affinity:
+        {{- if .Values.core.deployment.nodeAffinity.enabled}}
+        {{- with .Values.core.deployment.nodeAffinity.values}}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+
+        {{- if .Values.core.deployment.podAntiAffinity.enabled}}
+        {{- with .Values.core.deployment.podAntiAffinity.values}}
+        podAntiAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+      
+      {{- if .Values.core.deployment.topologySpreadConstraints.enabled}}
+      {{- with .Values.core.deployment.topologySpreadConstraints.values}}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      
+      {{- if .Values.core.deployment.tolerations.enabled}}
+      {{- with .Values.core.deployment.tolerations.values}}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}

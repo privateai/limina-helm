@@ -54,9 +54,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "limina.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "limina.fullname" .) .Values.serviceAccount.name }}
+{{- if .Values.core.serviceAccount.create }}
+{{- default (include "limina.fullname" .) .Values.core.serviceAccount.name }}
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- default "default" .Values.core.serviceAccount.name }}
 {{- end }}
 {{- end }}
