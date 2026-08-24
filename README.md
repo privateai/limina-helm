@@ -28,17 +28,17 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.0.1 > values.custom.yaml
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.0.1 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the license.data section of the values.custom.yaml file with single quotes surrounding, as per below
-license:
-  data: '{"id":"..."}'
+  license:
+    data: '{"id":"1", "tier": "..."}'
 
 # Install the limina chart with a name and namespace of limina
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
-  -f values.custom.yaml \
+  -f "$(date +%Y%m%d).values.yaml" \
   --version 0.0.1
 ```
 
@@ -60,6 +60,17 @@ helm uninstall --namespace limina limina
 
 ## Additional Configuration
 To customize your deployment, enable different sections of your values.yaml file as per the documentation below.
+
+### Async File Support
+Async File Support adds an additional set of containers to your cluster that will simplify managing both large (or complex) files, as well as large numbers of files. You can read more about the architecture [here](https://docs.getlimina.ai)
+
+Prerequisites:
+- Your kubernetes cluster must have a CSI driver that allows multiple pods read/write access to the same file system
+- You must deploy a redis cluster to allow for queuing of requests
+
+Steps:
+Locate the async section in your customized values file <date>.values.yaml and change enabled from "false" to "true"
+
 
 ### Ingress Controller
 If you would like to set up an external ingress to enable external traffic to reach the Limina deployment, you must enable the haproxy-ingress and cert-manager helm charts in the values.yaml file. Additionally, a sample ingress deployment file is included, and can be deployed with self-signed certificates for testing.

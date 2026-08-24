@@ -1,0 +1,17 @@
+{{- if .Values.core.configmap.values }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include 'limina.fullname' . }}-core"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+data:
+  {{- with .Values.core.configmap.values }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+{{- range .Values.core.configmap.values }}
+  {{ .name }}: {{ .value }}
+{{- end }}
+{{- end }}
