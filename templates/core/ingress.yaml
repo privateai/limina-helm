@@ -2,7 +2,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "limina.fullname" . }}
+  name: {{ include "limina.fullname" . }}-core
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
   {{- with .Values.core.ingress.annotations }}
@@ -17,7 +18,7 @@ spec:
         paths:
           - backend:
               service:
-                name: {{ include "limina.fullname" . }}
+                name: {{ include "limina.fullname" . }}-core
                 port:
                   number: {{ .Values.core.service.port }}
             path: "/"

@@ -49,14 +49,3 @@ Selector labels
 app.kubernetes.io/name: {{ include "limina.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "limina.serviceAccountName" -}}
-{{- if .Values.core.serviceAccount.create }}
-{{- default (include "limina.fullname" .) .Values.core.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.core.serviceAccount.name }}
-{{- end }}
-{{- end }}

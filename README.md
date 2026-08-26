@@ -28,17 +28,17 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.0.1 > values.custom.yaml
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.0.1 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the license.data section of the values.custom.yaml file with single quotes surrounding, as per below
-license:
-  data: '{"id":"..."}'
+  license:
+    data: '{"id":"1", "tier": "..."}'
 
 # Install the limina chart with a name and namespace of limina
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
-  -f values.custom.yaml \
+  -f "$(date +%Y%m%d).values.yaml" \
   --version 0.0.1
 ```
 
