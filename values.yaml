@@ -195,8 +195,7 @@ core:
     values: []
     # Example environment variables:
     # values:
-    #   - name: "PAI_DISABLE_RAM_CHECK"
-    #     value: "true"
+    #   - PAI_DISABLE_RAM_CHECK: "true"
 
   # Specifies whether to deploy the kubernetes core ingress
   # Requires haproxy-ingress and cert-manager to be installed

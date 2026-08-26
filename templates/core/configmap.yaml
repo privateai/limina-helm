@@ -8,10 +8,6 @@ metadata:
     {{- include "limina.labels" . | nindent 4 }}
 data:
   {{- with .Values.core.configmap.values }}
-    {{- toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 2 }}
   {{- end }}
-data:
-{{- range .Values.core.configmap.values }}
-  {{ .name }}: {{ .value }}
-{{- end }}
 {{- end }}
