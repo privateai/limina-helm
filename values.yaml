@@ -227,9 +227,9 @@ core:
     #   annotation-key1: "annotation-value1"
     #   annotation-key2: "annotation-value2"
     # If you use the External Secrets Operator, you can ignore this section and populate via the externalsecrets section below
-    values: []
+    data: []
     # Enter any environment variables for your deployment you wish to remain secret. Example: https://docs.getlimina.ai/configuration-and-operations/advanced-features/azure-ocr
-    # values:
+    # data:
     #   - name: "PAI_AZ_COMPUTER_VISION_KEY"
     #     value: "keyvalue"
 
