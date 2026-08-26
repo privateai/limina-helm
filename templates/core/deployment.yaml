@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ include 'limina.fullname' . }}-core"
+  name: {{ include "limina.fullname" . }}-core
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
@@ -20,14 +20,10 @@ spec:
         {{- include "limina.selectorLabels" . | nindent 8 }}
     spec:
       imagePullSecrets:
-      {{- if .Values.externalsecrets.enabled }}
-        - name: {{ .Values.externalsecrets.dockercredential.name }}
-      {{- else }}
-        - name: {{ .Values.core.deployment.imagePullSecrets.name }}
-      {{- end }}
+        - name: {{ .Values.shared.imagePullSecrets.name }}
       containers:
         - name: {{ .Chart.Name }}          
-          image: "{{ .Values.core.deployment.image.repository }}:{{ .Values.core.deployment.image.tag }}"
+          image: "{{ .Values.shared.repository }}/{{ .Values.core.deployment.image.name }}:{{ .Values.core.deployment.image.tag }}"
           {{- if or .Values.core.deployment.limits .Values.core.deployment.requests .Values.core.deployment.gpuEnabled }}
           resources:
             {{- if or .Values.core.deployment.limits .Values.core.deployment.gpuEnabled }}
@@ -52,7 +48,7 @@ spec:
           envFrom:
             - configMapRef:
                 {{- if .Values.core.configmapData }}
-                name: "{{ include 'limina.fullname' . }}-core"
+                name: {{ include "limina.fullname" . }}-core
                 {{- end }}
                 optional: true
           envFrom:
@@ -60,7 +56,7 @@ spec:
                 {{- if .Values.externalsecrets.enabled }}
                 name: {{ .Values.externalsecrets.secrets.name }}
                 {{- else }}
-                name: "{{ include 'limina.fullname' . }}-core"
+                name: {{ include "limina.fullname" . }}-core
                 {{- end }}
                 optional: true
           volumeMounts:

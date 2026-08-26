@@ -4,8 +4,7 @@ description: A Helm chart that deploys the Limina solution
 
 version: 0.0.1
 
-# This is the default version deployed by the chart.
-# However, this is simply a label - if you wish to change the version, update your values.yaml
+# This is simply a label - if you wish to change the version, update your values.yaml
 appVersion: "4.4.1-cpu"
 
 icon: https://cdn.prod.website-files.com/68fbb66f271b821ac9aac622/696fc066e7775e9efac86ecf_Limina%20Icon.png

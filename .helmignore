@@ -23,5 +23,4 @@
 .vscode/
 # Project specific
 .github
-!values.yaml
 *.values.yaml
