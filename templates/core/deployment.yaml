@@ -47,17 +47,11 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                {{- if .Values.core.configmapData }}
                 name: {{ include "limina.fullname" . }}-core
-                {{- end }}
                 optional: true
           envFrom:
             - secretRef:
-                {{- if .Values.externalsecrets.enabled }}
-                name: {{ .Values.externalsecrets.secrets.name }}
-                {{- else }}
                 name: {{ include "limina.fullname" . }}-core
-                {{- end }}
                 optional: true
           volumeMounts:
             - name: {{ .Values.core.deployment.license.volumeMount }}
