@@ -16,6 +16,23 @@ shared:
   imagePullSecrets:
     name: &imagePullSecretsName "crprivateaiprod-creds"
 
+  # Settings for the Limina license file
+  license:
+    # If you enable the External Secrets Operator, this section will be ignored
+    # Sets the name of the license secret object
+    name: "limina-license"
+    # Add optional annotations for the license secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+    volumeMount: "license-volume"
+    # If you use the External Secrets Operator, you can ignore this setting as the license file will be populated via a secret
+    # Override with your license data. See readme for more details
+    data: '{"id": "1", "tier": "..."}'
+
+
 # This section contains all information related to the Limina core product
 core:
   # This section contains configuration for the kubernetes service for the core product
@@ -65,22 +82,6 @@ core:
     # podAnnotations:
     #   annotation-key1: "annotation-value1"
     #   annotation-key2: "annotation-value1"
-
-    # Settings for the Limina license file
-    license:
-      # If you enable the External Secrets Operator, this section will be ignored
-      # Sets the name of the license secret object
-      name: "limina-license"
-      # Add optional annotations for the license secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-      annotations: {}
-      # Example annotations
-      # annotations:
-      #   annotation-key1: "annotation-value1"
-      #   annotation-key2: "annotation-value2"
-      volumeMount: "license-volume"
-      # If you use the External Secrets Operator, you can ignore this setting as the license file will be populated via a secret
-      # Override with your license data. See readme for more details
-      data: '{"id": "1", "tier": "..."}'
 
     # These are the values for liveness, startup and readiness probes.
     # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#probe-v1-core
@@ -240,8 +241,6 @@ externalsecrets:
   secretstorename: "secret-store"
   # Configuration details for the docker credentials secret
   dockercredential:
-    # Name of the externalsecret and secret objects for the imagepullsecret
-    name: *imagePullSecretsName
     # Optional annotations for the docker credential externalsecret and secret objects
     annotations: {}
     # Example annotations
@@ -258,8 +257,6 @@ externalsecrets:
     passwordProperty: "password"
   # Configuration details for the license file
   license:
-    # Name of the externalsecret and secret objects for the license
-    name: "limina-license"
     # Optional annotations for the license externalsecret and secret objects
     annotations: {}
     # Example annotations

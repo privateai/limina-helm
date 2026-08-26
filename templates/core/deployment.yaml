@@ -54,7 +54,7 @@ spec:
                 name: {{ include "limina.fullname" . }}-core
                 optional: true
           volumeMounts:
-            - name: {{ .Values.core.deployment.license.volumeMount }}
+            - name: {{ .Values.shared.license.volumeMount }}
               mountPath: /app/license
               {{- with .Values.core.deployment.additionalMounts.volumeMounts }}
                 {{- toYaml . | nindent 12 }}
@@ -76,13 +76,9 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: {{ .Values.core.deployment.license.volumeMount }}
+        - name: {{ .Values.shared.license.volumeMount }}
           secret:
-            {{- if .Values.externalsecrets.enabled }}
-            secretName: {{ .Values.externalsecrets.license.name }}
-            {{- else }}
-            secretName: {{ .Values.core.deployment.license.name }}
-            {{- end }}
+            secretName: {{ .Values.shared.license.name }}
           {{- with .Values.core.deployment.additionalMounts.volumes }}
             {{- toYaml . | nindent 8 }}
           {{- end }}
