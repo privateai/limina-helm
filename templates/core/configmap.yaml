@@ -1,4 +1,4 @@
-{{- if .Values.core.configmap.values }}
+{{- if .Values.core.configmap.data }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "limina.labels" . | nindent 4 }}
 data:
-  {{- with .Values.core.configmap.values }}
-    {{- toYaml . | nindent 2 }}
-  {{- end }}
+{{- range .Values.core.configmap.data }}
+  {{ .name }}: {{ .value | b64enc }}
+{{- end }}
 {{- end }}

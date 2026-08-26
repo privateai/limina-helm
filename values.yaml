@@ -193,10 +193,11 @@ core:
 
   # Enter any environment variables for your deployment. You can find the list at https://docs.getlimina.ai/configuration-and-operations/container-management/environment-variables
   configmap:
-    values: []
+    data: []
     # Example environment variables:
-    # values:
-    #   - PAI_DISABLE_RAM_CHECK: "true"
+    # data:
+    #   - name: "PAI_DISABLE_RAM_CHECK"
+    #     value: "true"
 
   # Specifies whether to deploy the kubernetes core ingress
   # Requires haproxy-ingress and cert-manager to be installed
