@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
-data: 
+data:
 {{- range .Values.api.configmap.data }}
   {{ .name }}: {{ .value | quote }}
 {{- end }}
