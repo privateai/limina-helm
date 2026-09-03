@@ -35,17 +35,10 @@ Common labels
 */}}
 {{- define "limina.labels" -}}
 helm.sh/chart: {{ include "limina.chart" . }}
-{{ include "limina.selectorLabels" . }}
+app.kubernetes.io/name: {{ include "limina.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{/*
-Selector labels
-*/}}
-{{- define "limina.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "limina.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

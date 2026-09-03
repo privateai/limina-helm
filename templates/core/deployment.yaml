@@ -8,22 +8,33 @@ metadata:
 spec:
   replicas: {{ .Values.core.deployment.replicaCount }}
   selector:
+    {{- with .Values.core.deployment.selector.matchLabels }}
     matchLabels:
-      {{- include "limina.selectorLabels" . | nindent 6 }}
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  strategy:
+    type: {{ .Values.core.deployment.strategy.type }}
   template:
     metadata:
       {{- with .Values.core.deployment.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.core.deployment.selector.matchLabels }}
       labels:
-        {{- include "limina.selectorLabels" . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       imagePullSecrets:
         - name: {{ .Values.shared.imagePullSecrets.name }}
+      {{- with .Values.core.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
-        - name: {{ .Chart.Name }}          
+        - name: {{ include "limina.fullname" . }}-core
           image: "{{ .Values.shared.repository }}/{{ .Values.core.deployment.image.name }}:{{ .Values.core.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.core.deployment.image.pullPolicy }}
           {{- if or .Values.core.deployment.limits .Values.core.deployment.requests .Values.core.deployment.gpuEnabled }}
           resources:
             {{- if or .Values.core.deployment.limits .Values.core.deployment.gpuEnabled }}
@@ -32,7 +43,7 @@ spec:
               nvidia.com/gpu: 1
               {{- end }}
             {{- with .Values.core.deployment.limits }}
-              {{- toYaml . | nindent 16 }}
+              {{- toYaml . | nindent 14 }}
             {{- end }}
             {{- end }}
             {{- with .Values.core.deployment.requests }}
@@ -40,7 +51,6 @@ spec:
               {{- toYaml . | nindent 14 }}
             {{- end }}
           {{- end }}
-          imagePullPolicy: {{ .Values.core.deployment.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.core.service.targetPort }}
@@ -49,7 +59,6 @@ spec:
             - configMapRef:
                 name: {{ include "limina.fullname" . }}-core
                 optional: true
-          envFrom:
             - secretRef:
                 name: {{ include "limina.fullname" . }}-core
                 optional: true
