@@ -1,0 +1,13 @@
+{{- if and .Values.shared.async.enabled .Values.shared.configmap.data }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "limina.fullname" . }}-shared
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+data:
+{{- range .Values.shared.configmap.data }}
+  {{ .name }}: {{ .value | quote }}
+{{- end }}
+{{- end }}

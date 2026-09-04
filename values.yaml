@@ -41,6 +41,28 @@ shared:
     # Override with your license data. See readme for more details
     data: '{"id": "1", "tier": "..."}'
 
+  # Optional configmap data for customizing timeouts for async product
+  configmap:
+    data: []
+    # data:
+    #   - name: "STATE_TTL_SUBMITTED"
+    #     value: 43200 # 12 hours
+    #   - name: "STATE_TTL_IN_PROGRESS"
+    #     value: 43200 # 12 hours
+    #   - name: "STATE_TTL_COMPLETED"
+    #     value: 3600 # 1 hour
+    #   - name: "STATE_TTL_DOWNLOADED"
+    #     value: 600 # 10 minutes
+    #   - name: "STATE_TTL_FAILED"
+    #     value: 3600 # 1 hour
+    #   - name: "STATE_TTL_EXPIRED"
+    #     value: 3600 # 1 hour
+    #   - name: "STATE_TTL_CANCELLED"
+    #     value: 3600 # 1 hour
+
+  # Specify the optional mount path for the async product
+  mountPath: &mountPath "/mnt/afp-files"
+
   # Optional persistent volume claim settings required for async support. Leave defaults if not running async
   pvc:
     # Specify the name of the volume claim
@@ -99,13 +121,13 @@ shared:
     port: &redisPort 6380
     # Whether or not to connect with TLS enabled
     tls: &redisTLS "true"
+    # If you use the External Secrets Operator, you can ignore this option and populate via the externalsecrets section below
+    # Otherwise this is entered into the async product various secrets
+    key: &redisKey ""
 
 # This section contains all information related to the Limina api product
 # This is disabled by default, and only required if you plan to use the async support
 api:
-  # Specify the mount path for the api product
-  mountPath: &mountPath "/mnt/afp-files"
-
   # Update environment variables to customize your deployment
   configmap:
     data:
@@ -121,20 +143,6 @@ api:
       #   value: "info"
       # - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
       #   value: 300
-      # - name: "STATE_TTL_SUBMITTED"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_IN_PROGRESS"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_COMPLETED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_DOWNLOADED"
-      #   value: 600 # 10 minutes
-      # - name: "STATE_TTL_FAILED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_EXPIRED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_CANCELLED"
-      #   value: 3600 # 1 hour
 
   # These secrets will be added to the environment variables for the Limina api deployment
   # If you use the External Secrets Operator, this section will be ignored
@@ -145,20 +153,14 @@ api:
     # annotations:
     #   annotation-key1: "annotation-value1"
     #   annotation-key2: "annotation-value2"
-    # If you use the External Secrets Operator, you can ignore this section and populate via the externalsecrets section below
+
+    # If you use the External Secrets Operator this section will be ignored
     data:
       - name: "REDIS_KEY"
-        value: "" # add your redis key here
+        value: *redisKey
 
+  # Configuration related to the api service
   service:
-    # Set the type for the service
-    type: "ClusterIP"
-
-    # Set the port for the service
-    port: 80
-
-    targetPort: &apiTargetPort 80
-
     # Add custom annotations to the service
     annotations: {}
     # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic
@@ -167,6 +169,14 @@ api:
     # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic
     # annotations:
     #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+    # Set the type for the service
+    type: "ClusterIP"
+
+    # Set the port for the service
+    port: 80
+
+    targetPort: &apiTargetPort 80
 
   # Configuration related to the api deployment
   deployment:
@@ -201,13 +211,13 @@ api:
 
     # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
     limits: {}
-    # Use the following if you would like to add limits to the core product
+    # Use the following if you would like to add limits to the api product
     # limits:
     #   memory: "4Gi"
     #   cpu: "2"
 
     requests: {}
-    # Use the following if you would like to add requests to the core product
+    # Use the following if you would like to add requests to the api product
     # requests:
     #   memory: "2Gi"
     #   cpu: "1"
@@ -338,6 +348,7 @@ core:
     # annotations:
     #   annotation-key1: "annotation-value1"
     #   annotation-key2: "annotation-value2"
+
     # If you use the External Secrets Operator, you can ignore this section and populate via the externalsecrets section below
     data: []
     # Enter any environment variables for your deployment you wish to remain secret. Example: https://docs.getlimina.ai/configuration-and-operations/advanced-features/azure-ocr
@@ -345,17 +356,8 @@ core:
     #   - name: "PAI_AZ_COMPUTER_VISION_KEY"
     #     value: "keyvalue"
 
-  # This section contains configuration for the kubernetes service for the core product
+  # Configuration related to the core service
   service:
-    # Set the type for the service
-    type: "ClusterIP"
-
-    # Set the port for the service
-    port: 80
-
-    # Set the target port for the deployment
-    targetPort: &coreTargetPort 8080
-
     # Add custom annotations to the service
     annotations: {}
     # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic
@@ -364,6 +366,15 @@ core:
     # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic
     # annotations:
     #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+    # Set the type for the service
+    type: "ClusterIP"
+
+    # Set the port for the service
+    port: 80
+
+    # Set the target port for the deployment
+    targetPort: &coreTargetPort 8080
 
   # Configuration related to the core deployment
   deployment:
@@ -536,14 +547,166 @@ core:
     host: "ingress.domain.com"
     tlsSecretName: "limina-tls"
 
+# This section contains all information related to the Limina custodian product
+# This is disabled by default, and only required if you plan to use the async support
+custodian:
+  # Update environment variables to customize your deployment
+  configmap:
+    data:
+      - name: "WORKER_ROLE"
+        value: "custodian"
+      - name: "FILE_DIR"
+        value: *mountPath
+      - name: "REDIS_HOST"
+        value: *redisUrl
+      - name: "REDIS_PORT"
+        value: *redisPort
+      - name: "REDIS_ENABLE_SSL"
+        value: *redisTLS
+      # - name: "LOG_LEVEL"
+      #   value: "info"
+
+  # These secrets will be added to the environment variables for the Limina custodian deployment
+  # If you use the External Secrets Operator, this section will be ignored
+  secrets:
+    # Add optional annotations for the deployment secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+
+    # If you use the External Secrets Operator this section will be ignored
+    data:
+      - name: "REDIS_KEY"
+        value: *redisKey
+
+  # Configuration related to the custodian deployment
+  deployment:
+    replicaCount: 1
+
+    # Specify selector matchLabels for custodian
+    selector:
+      matchLabels:
+        app: "limina-custodian"
+
+    # Specify a deployment strategy
+    strategy:
+      type: "RollingUpdate"
+
+    # Add custom pod annotations to the custodian deployment
+    podAnnotations: {}
+    # Example annotations
+    # podAnnotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value1"
+
+    # Specify a node selector to deploy limina custodian
+    nodeSelector: {}
+    # nodeSelector:
+    #   container: "limina-custodian"
+
+    image:
+      name: "afp-worker"
+      pullPolicy: "IfNotPresent"
+      # It is recommended to pin to a specific version for production environments
+      tag: "0.10.2"
+
+    # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+    limits: {}
+    # Use the following if you would like to add limits to the custodian product
+    # limits:
+    #   memory: "4Gi"
+    #   cpu: "2"
+
+    requests: {}
+    # Use the following if you would like to add requests to the custodian product
+    # requests:
+    #   memory: "2Gi"
+    #   cpu: "1"
+
+    # Add custom additional mounts
+    additionalMounts: {}
+    # Example mount configuration from a secret
+    # additionalMounts:
+    #   volumeMounts:
+    #     - name: "mount-name"
+    #       mountPath: "/mount/path"
+    #   volumes:
+    #     - name: "mount-name"
+    #       secret:
+    #         secretName: "mount-secret"
+
+    # These are the values for the affinity
+    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
+    nodeAffinity:
+      values: {}
+      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+      # and after on nodes with the label "limina"
+      # values:
+      #   preferredDuringSchedulingIgnoredDuringExecution:
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina"
+      #       weight: 1
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina-spot"
+      #       weight: 100
+
+    podAntiAffinity:
+      # Recommended configuration to ensure the custodian is not started on the same node as the core product
+      values:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchExpressions:
+                - key: "app.kubernetes.io/name"
+                  operator: "In"
+                  values:
+                    - "limina"
+                - key: "app.kubernetes.io/instance"
+                  operator: "In"
+                  values:
+                    - "limina"
+
+    topologySpreadConstraints:
+      values: []
+      # Use the following if you would like to spread your pods evenly across your infrastructure zones
+      # values:
+      #   - labelSelector:
+      #       matchLabels:
+      #         app.kubernetes.io/name: "limina"
+      #         app.kubernetes.io/instance: "limina"
+      #     matchLabelKeys:
+      #       - "pod-template-hash"
+      #     maxSkew: 1
+      #     topologyKey: "topology.kubernetes.io/zone"
+      #     whenUnsatisfiable: "ScheduleAnyway"
+
+    tolerations:
+      values: []
+      # Use the following if you have added a taint to your nodes of app=limina
+      # values:
+      #   - key: app
+      #     operator: "Equal"
+      #     value: "limina"
+      #     effect: "NoSchedule"
+
 # Configuration for the External Secrets operator
-externalsecrets:
+externalSecrets:
   # Specifies whether to use configuration for the external secrets operator
   enabled: false
   # Specifies the secret store to retrieve secrets
-  secretstorename: "secret-store"
+  secretStoreName: "limina-store"
   # Configuration details for the docker credentials secret
-  dockercredential:
+  dockerCredential:
     # Optional annotations for the docker credential externalsecret and secret objects
     annotations: {}
     # Example annotations
@@ -573,8 +736,6 @@ externalsecrets:
     licenseProperty: "license.json"
   # Configuration for the optional Limina api environment secrets
   api:
-    # Enables or disables Limina environment secrets
-    enabled: false
     # Optional annotations for the api deployment externalsecret and secret objects
     annotations: {}
     # Example annotations
@@ -601,3 +762,16 @@ externalsecrets:
     # This is the reference to the name of the secret from the secret store
     # All properties will be added from the secret in the secret store to the container environment variables
     remoteRefKey: "limina-core"
+  # Configuration for the optional Limina custodian environment secrets
+  custodian:
+    # Optional annotations for the custodian deployment externalsecret and secret objects
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+    # Set the refresh interval to check for updated secrets
+    refreshInterval: "1h"
+    # This is the reference to the name of the secret from the secret store
+    # All properties will be added from the secret in the secret store to the container environment variables
+    remoteRefKey: "limina-custodian"

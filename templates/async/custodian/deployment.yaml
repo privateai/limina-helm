@@ -1,0 +1,95 @@
+{{ if .Values.shared.async.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limina.fullname" . }}-custodian
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.custodian.deployment.replicaCount }}
+  selector:
+    {{- with .Values.custodian.deployment.selector.matchLabels }}
+    matchLabels:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  strategy:
+    type: {{ .Values.custodian.deployment.strategy.type }}
+  template:
+    metadata:
+      {{- with .Values.custodian.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.custodian.deployment.selector.matchLabels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.shared.imagePullSecrets.name }}
+      {{- with .Values.custodian.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "limina.fullname" . }}-custodian
+          image: "{{ .Values.shared.repository }}/{{ .Values.custodian.deployment.image.name }}:{{ .Values.custodian.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.custodian.deployment.image.pullPolicy }}
+          {{- if or .Values.custodian.deployment.limits .Values.custodian.deployment.requests }}
+          resources:
+            {{- with .Values.custodian.deployment.limits }}
+            limits:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with .Values.custodian.deployment.requests }}
+            requests:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-custodian
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-shared
+                optional: true
+            - secretRef:
+                name: {{ include "limina.fullname" . }}-custodian
+          volumeMounts:
+            - name: shared-filestore
+              mountPath: {{ .Values.shared.mountPath }}
+              {{- with .Values.custodian.deployment.additionalMounts.volumeMounts }}
+                {{- toYaml . | nindent 12 }}
+              {{- end }}
+      volumes:
+        - name: shared-filestore
+          persistentVolumeClaim:
+            claimName: {{ .Values.shared.pvc.name }}
+          {{- with .Values.custodian.deployment.additionalMounts.volumes }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+
+      {{- if or .Values.custodian.deployment.nodeAffinity.values .Values.custodian.deployment.podAntiAffinity.values }}
+      affinity:
+        {{- with .Values.custodian.deployment.nodeAffinity.values }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with .Values.custodian.deployment.podAntiAffinity.values }}
+        podAntiAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+
+      {{- with .Values.custodian.deployment.topologySpreadConstraints.values }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.custodian.deployment.tolerations.values }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

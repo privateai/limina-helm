@@ -54,11 +54,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "limina.fullname" . }}-api
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-shared
+                optional: true
             - secretRef:
                 name: {{ include "limina.fullname" . }}-api
           volumeMounts:
             - name: shared-filestore
-              mountPath: {{ .Values.api.mountPath }}
+              mountPath: {{ .Values.shared.mountPath }}
               {{- with .Values.api.deployment.additionalMounts.volumeMounts }}
                 {{- toYaml . | nindent 12 }}
               {{- end }}
