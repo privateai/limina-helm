@@ -61,6 +61,18 @@ helm uninstall --namespace limina limina
 ## Additional Configuration
 To customize your deployment, enable different sections of your values.yaml file as per the documentation below.
 
+### Async File Support
+Async File Support adds an additional set of containers to your cluster that will simplify managing both large (or complex) files, as well as large numbers of files. You can read more about the architecture [here](https://docs.getlimina.ai)
+
+Prerequisites:
+- Your kubernetes cluster must have a CSI driver that allows multiple pods read/write access to the same file system
+- You must deploy a redis cluster to allow for queuing of requests
+- You must ensure your kubernetes cluster has access to both redis and your file system
+
+Steps:
+Locate the async section in your customized values file <date>.values.yaml and change enabled from "false" to "true"
+
+
 ### Ingress Controller
 If you would like to set up an external ingress to enable external traffic to reach the Limina deployment, you must enable the haproxy-ingress and cert-manager helm charts in the values.yaml file. Additionally, a sample ingress deployment file is included, and can be deployed with self-signed certificates for testing.
 

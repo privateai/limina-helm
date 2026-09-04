@@ -17,4 +17,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "limina.selectorLabels" . | nindent 4 }}
+    {{- with .Values.core.deployment.selector.matchLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}

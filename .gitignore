@@ -3,3 +3,4 @@
 
 # No need for the subcharts to be checked in
 charts/
+*.tgz

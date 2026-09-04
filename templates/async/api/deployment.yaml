@@ -1,0 +1,108 @@
+{{ if .Values.shared.async.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limina.fullname" . }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.deployment.replicaCount }}
+  selector:
+    {{- with .Values.api.deployment.selector.matchLabels }}
+    matchLabels:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  strategy:
+    type: {{ .Values.api.deployment.strategy.type }}
+  template:
+    metadata:
+      {{- with .Values.api.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.deployment.selector.matchLabels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.shared.imagePullSecrets.name }}
+      {{- with .Values.api.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "limina.fullname" . }}-api
+          image: "{{ .Values.shared.repository }}/{{ .Values.api.deployment.image.name }}:{{ .Values.api.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.api.deployment.image.pullPolicy }}
+          {{- if or .Values.api.deployment.limits .Values.api.deployment.requests }}
+          resources:
+            {{- with .Values.api.deployment.limits }}
+            limits:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with .Values.api.deployment.requests }}
+            requests:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.api.service.targetPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-api
+            - secretRef:
+                name: {{ include "limina.fullname" . }}-api
+          volumeMounts:
+            - name: shared-filestore
+              mountPath: {{ .Values.api.mountPath }}
+              {{- with .Values.api.deployment.additionalMounts.volumeMounts }}
+                {{- toYaml . | nindent 12 }}
+              {{- end }}
+          {{- with .Values.api.deployment.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.api.deployment.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.api.deployment.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: shared-filestore
+          persistentVolumeClaim:
+            claimName: {{ .Values.shared.pvc.name }}
+          {{- with .Values.api.deployment.additionalMounts.volumes }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+
+      {{- if or .Values.api.deployment.nodeAffinity.values .Values.api.deployment.podAntiAffinity.values }}
+      affinity:
+        {{- with .Values.api.deployment.nodeAffinity.values }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with .Values.api.deployment.podAntiAffinity.values }}
+        podAntiAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+
+      {{- with .Values.api.deployment.topologySpreadConstraints.values }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.api.deployment.tolerations.values }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}
