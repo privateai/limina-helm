@@ -41,6 +41,25 @@ shared:
     # Override with your license data. See readme for more details
     data: '{"id": "1", "tier": "..."}'
 
+  # Optional configmap data for customizing timeouts for async product
+  configmap:
+    data: []
+    # data:
+    #   - name: "STATE_TTL_SUBMITTED"
+    #     value: 43200 # 12 hours
+    #   - name: "STATE_TTL_IN_PROGRESS"
+    #     value: 43200 # 12 hours
+    #   - name: "STATE_TTL_COMPLETED"
+    #     value: 3600 # 1 hour
+    #   - name: "STATE_TTL_DOWNLOADED"
+    #     value: 600 # 10 minutes
+    #   - name: "STATE_TTL_FAILED"
+    #     value: 3600 # 1 hour
+    #   - name: "STATE_TTL_EXPIRED"
+    #     value: 3600 # 1 hour
+    #   - name: "STATE_TTL_CANCELLED"
+    #     value: 3600 # 1 hour
+
   # Specify the optional mount path for the async product
   mountPath: &mountPath "/mnt/afp-files"
 
@@ -124,20 +143,6 @@ api:
       #   value: "info"
       # - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
       #   value: 300
-      # - name: "STATE_TTL_SUBMITTED"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_IN_PROGRESS"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_COMPLETED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_DOWNLOADED"
-      #   value: 600 # 10 minutes
-      # - name: "STATE_TTL_FAILED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_EXPIRED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_CANCELLED"
-      #   value: 3600 # 1 hour
 
   # These secrets will be added to the environment variables for the Limina api deployment
   # If you use the External Secrets Operator, this section will be ignored
@@ -560,22 +565,6 @@ custodian:
         value: *redisTLS
       # - name: "LOG_LEVEL"
       #   value: "info"
-      # - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
-      #   value: 300
-      # - name: "STATE_TTL_SUBMITTED"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_IN_PROGRESS"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_COMPLETED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_DOWNLOADED"
-      #   value: 600 # 10 minutes
-      # - name: "STATE_TTL_FAILED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_EXPIRED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_CANCELLED"
-      #   value: 3600 # 1 hour
 
   # These secrets will be added to the environment variables for the Limina custodian deployment
   # If you use the External Secrets Operator, this section will be ignored
@@ -591,25 +580,6 @@ custodian:
     data:
       - name: "REDIS_KEY"
         value: *redisKey
-
-  # Configuration related to the custodian service
-  service:
-    # Set the type for the service
-    type: "ClusterIP"
-
-    # Set the port for the service
-    port: 80
-
-    targetPort: &custodianTargetPort 80
-
-    # Add custom annotations to the service
-    annotations: {}
-    # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic
-    # annotations:
-    #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic
-    # annotations:
-    #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 
   # Configuration related to the custodian deployment
   deployment:

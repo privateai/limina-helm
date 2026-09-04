@@ -54,6 +54,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "limina.fullname" . }}-api
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-shared
+                optional: true
             - secretRef:
                 name: {{ include "limina.fullname" . }}-api
           volumeMounts:

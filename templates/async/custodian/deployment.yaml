@@ -47,13 +47,12 @@ spec:
               {{- toYaml . | nindent 14 }}
             {{- end }}
           {{- end }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.custodian.service.targetPort }}
-              protocol: TCP
           envFrom:
             - configMapRef:
                 name: {{ include "limina.fullname" . }}-custodian
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-shared
+                optional: true
             - secretRef:
                 name: {{ include "limina.fullname" . }}-custodian
           volumeMounts:
