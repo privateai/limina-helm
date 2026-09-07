@@ -52,9 +52,10 @@ shared:
     #   annotation-key2: "annotation-value2"
 
     # If you use the External Secrets Operator this section will be ignored
-    data:
-      - name: "REDIS_KEY"
-        value: ""
+    data: []
+    # data: 
+    #   - name: "REDIS_KEY"
+    #     value: ""
 
   # Specify the optional mount path for the async product
   mountPath: &mountPath "/mnt/afp-files"
