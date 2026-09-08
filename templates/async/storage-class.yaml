@@ -2,7 +2,7 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: {{ .Values.shared.storageClass.name }}
+  name: {{ include "limina.fullname" . }}-async
   {{- with .Values.shared.storageClass.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

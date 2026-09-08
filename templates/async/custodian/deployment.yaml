@@ -52,9 +52,8 @@ spec:
                 name: {{ include "limina.fullname" . }}-custodian
             - configMapRef:
                 name: {{ include "limina.fullname" . }}-shared
-                optional: true
             - secretRef:
-                name: {{ include "limina.fullname" . }}-custodian
+                name: {{ include "limina.fullname" . }}-shared
           volumeMounts:
             - name: shared-filestore
               mountPath: {{ .Values.shared.mountPath }}
@@ -64,32 +63,27 @@ spec:
       volumes:
         - name: shared-filestore
           persistentVolumeClaim:
-            claimName: {{ .Values.shared.pvc.name }}
+            claimName: {{ include "limina.fullname" . }}-async
           {{- with .Values.custodian.deployment.additionalMounts.volumes }}
             {{- toYaml . | nindent 8 }}
           {{- end }}
-
       {{- if or .Values.custodian.deployment.nodeAffinity.values .Values.custodian.deployment.podAntiAffinity.values }}
       affinity:
         {{- with .Values.custodian.deployment.nodeAffinity.values }}
         nodeAffinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-
         {{- with .Values.custodian.deployment.podAntiAffinity.values }}
         podAntiAffinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       {{- end }}
-
       {{- with .Values.custodian.deployment.topologySpreadConstraints.values }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
       {{- with .Values.custodian.deployment.tolerations.values }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
 {{- end }}

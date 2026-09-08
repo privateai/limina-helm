@@ -41,33 +41,27 @@ shared:
     # Override with your license data. See readme for more details
     data: '{"id": "1", "tier": "..."}'
 
-  # Optional configmap data for customizing timeouts for async product
-  configmap:
+  # Optional shared secret, required if the async product is enabled
+  # If you use the External Secrets Operator, this section will be ignored
+  secrets:
+    # Add optional annotations for the shared secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+
+    # If you use the External Secrets Operator this section will be ignored
     data: []
-    # data:
-    #   - name: "STATE_TTL_SUBMITTED"
-    #     value: 43200 # 12 hours
-    #   - name: "STATE_TTL_IN_PROGRESS"
-    #     value: 43200 # 12 hours
-    #   - name: "STATE_TTL_COMPLETED"
-    #     value: 3600 # 1 hour
-    #   - name: "STATE_TTL_DOWNLOADED"
-    #     value: 600 # 10 minutes
-    #   - name: "STATE_TTL_FAILED"
-    #     value: 3600 # 1 hour
-    #   - name: "STATE_TTL_EXPIRED"
-    #     value: 3600 # 1 hour
-    #   - name: "STATE_TTL_CANCELLED"
-    #     value: 3600 # 1 hour
+    # data: 
+    #   - name: "REDIS_KEY"
+    #     value: ""
 
   # Specify the optional mount path for the async product
   mountPath: &mountPath "/mnt/afp-files"
 
   # Optional persistent volume claim settings required for async support. Leave defaults if not running async
   pvc:
-    # Specify the name of the volume claim
-    name: "async-filestore"
-
     # Add optional annotations for the pvc
     annotations: {}
     # Example annotations
@@ -83,9 +77,6 @@ shared:
 
   # Optional storage class settings required for async support. Leave defaults if not running async
   storageClass:
-    # Specify the name of the storage class
-    name: &storageClassName "async-filestore"
-
     # Add optional annotations for the storage class
     annotations: {}
     # Example annotations
@@ -99,6 +90,7 @@ shared:
       provisioningMode: "efs-ap"
       fileSystemId: "insert your pre-made efs file system id"
       directoryPerms: "700"
+    volumeBindingMode: "WaitForFirstConsumer"
 
     # Example for Azure using file storage
     # provisioner: "file.csi.azure.com"
@@ -111,53 +103,45 @@ shared:
     #   - cache=strict
     # parameters:
     #   skuName: "Standard_LRS"
-    #   shareName: *storageClassName
+    #   shareName: "limina-async-files"
 
-  # Optional redis settings required for async support. Leave defaults if not running async
-  redis:
-    # The URL of the redis instance
-    url: &redisUrl "redis-url"
-    # The port of the redis instance
-    port: &redisPort 6380
-    # Whether or not to connect with TLS enabled
-    tls: &redisTLS "true"
-    # If you use the External Secrets Operator, you can ignore this option and populate via the externalsecrets section below
-    # Otherwise this is entered into the async product various secrets
-    key: &redisKey ""
+  # Optional configmap data for customizing timeouts for async product
+  configmap:
+    data:
+      - name: "FILE_DIR"
+        value: *mountPath
+      - name: "REDIS_HOST"
+        value: "redis-url"
+      - name: "REDIS_PORT"
+        value: 6380
+      - name: "REDIS_ENABLE_SSL"
+        value: "true"
+      # - name: "STATE_TTL_SUBMITTED"
+      #   value: 43200 # 12 hours
+      # - name: "STATE_TTL_IN_PROGRESS"
+      #   value: 43200 # 12 hours
+      # - name: "STATE_TTL_COMPLETED"
+      #   value: 3600 # 1 hour
+      # - name: "STATE_TTL_DOWNLOADED"
+      #   value: 600 # 10 minutes
+      # - name: "STATE_TTL_FAILED"
+      #   value: 3600 # 1 hour
+      # - name: "STATE_TTL_EXPIRED"
+      #   value: 3600 # 1 hour
+      # - name: "STATE_TTL_CANCELLED"
+      #   value: 3600 # 1 hour
 
 # This section contains all information related to the Limina api product
 # This is disabled by default, and only required if you plan to use the async support
 api:
   # Update environment variables to customize your deployment
   configmap:
-    data:
-      - name: "FILE_DIR"
-        value: *mountPath
-      - name: "REDIS_HOST"
-        value: *redisUrl
-      - name: "REDIS_PORT"
-        value: *redisPort
-      - name: "REDIS_ENABLE_SSL"
-        value: *redisTLS
-      # - name: "LOG_LEVEL"
-      #   value: "info"
-      # - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
-      #   value: 300
-
-  # These secrets will be added to the environment variables for the Limina api deployment
-  # If you use the External Secrets Operator, this section will be ignored
-  secrets:
-    # Add optional annotations for the deployment secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-
-    # If you use the External Secrets Operator this section will be ignored
-    data:
-      - name: "REDIS_KEY"
-        value: *redisKey
+    data: []
+    # data:
+    #   - name: "LOG_LEVEL"
+    #     value: "info"
+    #   - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
+    #     value: 300
 
   # Configuration related to the api service
   service:
@@ -555,31 +539,8 @@ custodian:
     data:
       - name: "WORKER_ROLE"
         value: "custodian"
-      - name: "FILE_DIR"
-        value: *mountPath
-      - name: "REDIS_HOST"
-        value: *redisUrl
-      - name: "REDIS_PORT"
-        value: *redisPort
-      - name: "REDIS_ENABLE_SSL"
-        value: *redisTLS
       # - name: "LOG_LEVEL"
       #   value: "info"
-
-  # These secrets will be added to the environment variables for the Limina custodian deployment
-  # If you use the External Secrets Operator, this section will be ignored
-  secrets:
-    # Add optional annotations for the deployment secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-
-    # If you use the External Secrets Operator this section will be ignored
-    data:
-      - name: "REDIS_KEY"
-        value: *redisKey
 
   # Configuration related to the custodian deployment
   deployment:
@@ -699,6 +660,42 @@ custodian:
       #     value: "limina"
       #     effect: "NoSchedule"
 
+# This section contains all information related to the Limina processor product
+# This is disabled by default, and only required if you plan to use the async support
+processor:
+  # Update environment variables to customize your deployment
+  configmap:
+    data:
+      - name: "WORKER_ROLE"
+        value: "processor"
+      - name: "DEID_URL"
+        value: "http://localhost:8080"
+      # - name: "LOG_LEVEL"
+      #   value: "info"
+      # - name: "REQUEST_TIMEOUT"
+      #   value: 300
+
+  # Configuration related to the api deployment
+  deployment:
+    image:
+      name: "afp-worker"
+      pullPolicy: "IfNotPresent"
+      # It is recommended to pin to a specific version for production environments
+      tag: "0.10.2"
+
+    # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+    limits: {}
+    # Use the following if you would like to add limits to the custodian product
+    # limits:
+    #   memory: "4Gi"
+    #   cpu: "2"
+
+    requests: {}
+    # Use the following if you would like to add requests to the custodian product
+    # requests:
+    #   memory: "2Gi"
+    #   cpu: "1"
+
 # Configuration for the External Secrets operator
 externalSecrets:
   # Specifies whether to use configuration for the external secrets operator
@@ -734,19 +731,6 @@ externalSecrets:
     # This is the reference to the name of the secret from the secret store
     remoteRefKey: "license"
     licenseProperty: "license.json"
-  # Configuration for the optional Limina api environment secrets
-  api:
-    # Optional annotations for the api deployment externalsecret and secret objects
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-    # Set the refresh interval to check for updated secrets
-    refreshInterval: "1h"
-    # This is the reference to the name of the secret from the secret store
-    # All properties will be added from the secret in the secret store to the container environment variables
-    remoteRefKey: "limina-api"
   # Configuration for the optional Limina core environment secrets
   core:
     # Enables or disables Limina environment secrets
@@ -762,9 +746,9 @@ externalSecrets:
     # This is the reference to the name of the secret from the secret store
     # All properties will be added from the secret in the secret store to the container environment variables
     remoteRefKey: "limina-core"
-  # Configuration for the optional Limina custodian environment secrets
-  custodian:
-    # Optional annotations for the custodian deployment externalsecret and secret objects
+  # Configuration for the shared Limina secrets, required if async is enabled
+  shared:
+    # Optional annotations for the shared externalsecret and secret objects
     annotations: {}
     # Example annotations
     # annotations:
@@ -774,4 +758,4 @@ externalSecrets:
     refreshInterval: "1h"
     # This is the reference to the name of the secret from the secret store
     # All properties will be added from the secret in the secret store to the container environment variables
-    remoteRefKey: "limina-custodian"
+    remoteRefKey: "limina-shared"

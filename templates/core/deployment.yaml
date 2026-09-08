@@ -84,6 +84,32 @@ spec:
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- if .Values.shared.async.enabled }}
+        - name: {{ include "limina.fullname" . }}-processor
+          image: "{{ .Values.shared.repository }}/{{ .Values.processor.deployment.image.name }}:{{ .Values.processor.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.processor.deployment.image.pullPolicy }}
+          {{- if or .Values.processor.deployment.limits .Values.processor.deployment.requests }}
+          resources:
+            {{- with .Values.processor.deployment.limits }}
+            limits:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with .Values.processor.deployment.requests }}
+            requests:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-processor
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-shared
+            - secretRef:
+                name: {{ include "limina.fullname" . }}-shared
+          volumeMounts:
+            - name: shared-filestore
+              mountPath: {{ .Values.shared.mountPath }}
+        {{- end }}
       volumes:
         - name: {{ .Values.shared.license.volumeMount }}
           secret:
@@ -91,6 +117,11 @@ spec:
           {{- with .Values.core.deployment.additionalMounts.volumes }}
             {{- toYaml . | nindent 8 }}
           {{- end }}
+        {{- if .Values.shared.async.enabled }}
+        - name: shared-filestore
+          persistentVolumeClaim:
+            claimName: {{ include "limina.fullname" . }}-async
+        {{- end }}
       {{- if .Values.core.deployment.gpuEnabled }}
         - name: dshm-volume
           emptyDir:

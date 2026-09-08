@@ -28,7 +28,7 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.0.1 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:1.0.0 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the license.data section of the values.custom.yaml file with single quotes surrounding, as per below
   license:
@@ -39,7 +39,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.0.1
+  --version 1.0.0
 ```
 
 ## Testing
@@ -70,7 +70,37 @@ Prerequisites:
 - You must ensure your kubernetes cluster has access to both redis and your file system
 
 Steps:
-Locate the async section in your customized values file <date>.values.yaml and change enabled from "false" to "true"
+Update the following sections in your customized values file <date>.values.yaml
+```yaml
+shared:
+  async:
+    enabled: true
+    data: 
+      - name: "REDIS_KEY"
+        value: "enter_redis_key" # Enter redis key here if you do not plan to use external secret operator
+  pvc:
+    storage: "200Gi" # Customize temporary file storage for async request and response objects
+  storageClass: # Add details for your specific environment
+  configmap:
+    data:
+      - name: "REDIS_HOST"
+        value: "enter_redis_host" # Enter the redis host so that the async components can access the job queue
+      - name: "REDIS_PORT"
+        value: 6380 # Enter your redis port
+      - name: "REDIS_ENABLE_SSL"
+        value: "true" # Control whether or not to connect to redis via TLS
+externalSecrets:
+  shared: # Add details for external secret here containing redis key if you prefer
+```
+
+# Proceed with installing limina via helm into the limina namespace
+helm upgrade --install \
+  limina oci://crprivateaiprod.azurecr.io/helm/limina \
+  --namespace limina \
+  -f "$(date +%Y%m%d).values.yaml" \
+  --version 1.0.0
+```
+
 
 
 ### Ingress Controller
@@ -113,14 +143,14 @@ helm upgrade --install \
 #  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
 
 
-# Update your values.custom.yaml file with the appropriate values under ingress
+# Update your custom values.yaml file with the appropriate values under ingress
 
 # Proceed with installing limina via helm into the limina namespace
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
-  -f values.custom.yaml \
-  --version 0.0.1
+  -f "$(date +%Y%m%d).values.yaml" \
+  --version 1.0.0
 ```
 
 ### External Secrets Operator
@@ -276,10 +306,9 @@ EOF
 
 Update your values.custom.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure to update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
 
-```console
+```yaml
 externalsecrets:
   enabled: true
-...
 ```
 
 Proceed with installing the helm chart
@@ -288,6 +317,6 @@ Proceed with installing the helm chart
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
-  -f values.custom.yaml \
-  --version 0.0.1
+  -f "$(date +%Y%m%d).values.yaml" \
+  --version 1.0.0
 ```
