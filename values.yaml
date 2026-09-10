@@ -471,7 +471,7 @@ core:
       #       weight: 100
 
     podAntiAffinity:
-      # Recommended configuration to ensure only one Limina core container is scheduled per node:
+      # Recommended configuration to ensure only one Limina core container is scheduled per node
       values:
         requiredDuringSchedulingIgnoredDuringExecution:
           - topologyKey: "kubernetes.io/hostname"
