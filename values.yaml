@@ -275,20 +275,17 @@ api:
       #       weight: 100
 
     podAntiAffinity:
-      # Recommended configuration to ensure the api is not started on the same node as the core product
-      values:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: "kubernetes.io/hostname"
-            labelSelector:
-              matchExpressions:
-                - key: "app.kubernetes.io/name"
-                  operator: "In"
-                  values:
-                    - "limina"
-                - key: "app.kubernetes.io/instance"
-                  operator: "In"
-                  values:
-                    - "limina"
+      # Optional configuration for api product anti affinity
+      values: {}
+      # values:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-api"
 
     topologySpreadConstraints:
       values: []
@@ -474,20 +471,16 @@ core:
       #       weight: 100
 
     podAntiAffinity:
-      # Recommended configuration to ensure only one Limina container is scheduled per node:
+      # Recommended configuration to ensure only one Limina core container is scheduled per node
       values:
         requiredDuringSchedulingIgnoredDuringExecution:
           - topologyKey: "kubernetes.io/hostname"
             labelSelector:
               matchExpressions:
-                - key: "app.kubernetes.io/name"
+                - key: "app"
                   operator: "In"
                   values:
-                    - "limina"
-                - key: "app.kubernetes.io/instance"
-                  operator: "In"
-                  values:
-                    - "limina"
+                    - "limina-core"
 
     topologySpreadConstraints:
       values: []
@@ -622,20 +615,17 @@ custodian:
       #       weight: 100
 
     podAntiAffinity:
-      # Recommended configuration to ensure the custodian is not started on the same node as the core product
-      values:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: "kubernetes.io/hostname"
-            labelSelector:
-              matchExpressions:
-                - key: "app.kubernetes.io/name"
-                  operator: "In"
-                  values:
-                    - "limina"
-                - key: "app.kubernetes.io/instance"
-                  operator: "In"
-                  values:
-                    - "limina"
+      # Optional configuration for custodian product anti affinity
+      values: {}
+      # values:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-custodian"
 
     topologySpreadConstraints:
       values: []
