@@ -94,6 +94,7 @@ externalSecrets:
 ```
 
 # Proceed with installing limina via helm into the limina namespace
+```console
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
