@@ -93,7 +93,7 @@ externalSecrets:
   shared: # Add details for external secret here containing redis key if you prefer
 ```
 
-# Proceed with installing limina via helm into the limina namespace
+Proceed with installing limina via helm into the limina namespace
 ```console
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
