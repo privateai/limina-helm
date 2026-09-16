@@ -2,7 +2,7 @@ apiVersion: v2
 name: limina
 description: A Helm chart that deploys the Limina solution
 
-version: 1.0.0
+version: 0.1.0
 
 # This is simply a label - if you wish to change the version, update your values.yaml
 appVersion: "4.4.1-cpu"

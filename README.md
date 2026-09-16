@@ -6,7 +6,7 @@ Please keep in mind that for deployments requiring a public facing endpoint, you
 
 ## Prerequisites
 
-- You must have a valid Limina license file and docker credentials. You can retrieve these from the Limina (Customer Portal)[https://portal.getlimina.ai]. If you have any issues, please [contact us](https://www.getlimina.ai/en/contact-us)
+- You must have a valid Limina license file and docker credentials. You can retrieve these from the Limina [Customer Portal](https://portal.getlimina.ai). If you have any issues, please [contact us](https://www.getlimina.ai/en/contact-us)
 - You must have an existing kubernetes cluster
 - Helm version 4.0.0 or greater
 
@@ -28,9 +28,9 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:1.0.0 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.0 > "$(date +%Y%m%d).values.yaml"
 
-# Copy your license.json file contents and paste them into the license.data section of the values.custom.yaml file with single quotes surrounding, as per below
+# Copy your license.json file contents and paste them into the license.data section of the custom values.yaml file with single quotes surrounding, as per below
   license:
     data: '{"id":"1", "tier": "..."}'
 
@@ -39,7 +39,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 1.0.0
+  --version 0.1.0
 ```
 
 ## Testing
@@ -62,7 +62,7 @@ helm uninstall --namespace limina limina
 To customize your deployment, enable different sections of your values.yaml file as per the documentation below.
 
 ### Async File Support
-Async File Support adds an additional set of containers to your cluster that will simplify managing both large (or complex) files, as well as large numbers of files. You can read more about the architecture [here](https://docs.getlimina.ai)
+Async File Support adds an additional set of containers to your cluster that will simplify managing both large (or complex) files, as well as large numbers of files. You can read more about the architecture [here](https://docs.getlimina.ai).
 
 Prerequisites:
 - Your kubernetes cluster must have a CSI driver that allows multiple pods read/write access to the same file system
@@ -70,7 +70,7 @@ Prerequisites:
 - You must ensure your kubernetes cluster has access to both redis and your file system
 
 Steps:
-Update the following sections in your customized values file <date>.values.yaml
+- Update the following sections in your customized values file
 ```yaml
 shared:
   async:
@@ -93,13 +93,13 @@ externalSecrets:
   shared: # Add details for external secret here containing redis key if you prefer
 ```
 
-Proceed with installing limina via helm into the limina namespace
+- Proceed with installing limina via helm into the limina namespace
 ```console
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 1.0.0
+  --version 0.1.0
 ```
 
 
@@ -151,7 +151,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 1.0.0
+  --version 0.1.0
 ```
 
 ### External Secrets Operator
@@ -172,7 +172,8 @@ helm upgrade --install \
   external-secrets external-secrets/external-secrets \
   --namespace limina
 
-# Create two secrets, one for the license file and one for the docker credentials, in your external secret store of choice. You can optionally create a secret for environment variables to configure the Limina container.
+# Create two secrets, one for the license file and one for the docker credentials, in your external secret store of choice
+# You can optionally create a secret for environment variables to configure the Limina container
 ```
 
 #### AWS Secrets Manager Steps
@@ -305,7 +306,7 @@ spec:
 EOF
 ```
 
-Update your values.custom.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure to update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
+Update your custom values.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure to update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
 
 ```yaml
 externalsecrets:
@@ -314,10 +315,9 @@ externalsecrets:
 
 Proceed with installing the helm chart
 ```console
-# Proceed with installing / upgrading limina via helm into the limina namespace
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 1.0.0
+  --version 0.1.0
 ```
