@@ -191,7 +191,7 @@ api:
       name: "afp-api"
       pullPolicy: "IfNotPresent"
       # It is recommended to pin to a specific version for production environments
-      tag: "0.10.3"
+      tag: "0.10.4"
 
     # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
     limits: {}
@@ -251,41 +251,40 @@ api:
       failureThreshold: 3
       timeoutSeconds: 1
 
-    # These are the values for the affinity
+    # Configuration for node affinity
     # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
-    nodeAffinity:
-      values: {}
-      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
-      # and after on nodes with the label "limina"
-      # values:
-      #   preferredDuringSchedulingIgnoredDuringExecution:
-      #     - preference:
-      #         matchExpressions:
-      #           - key: "nodetype"
-      #             operator: "In"
-      #             values:
-      #               - "limina"
-      #       weight: 1
-      #     - preference:
-      #         matchExpressions:
-      #           - key: "nodetype"
-      #             operator: "In"
-      #             values:
-      #               - "limina-spot"
-      #       weight: 100
+    nodeAffinity: {}
+    # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+    # and after on nodes with the label "limina"
+    # nodeAffinity:
+    #   preferredDuringSchedulingIgnoredDuringExecution:
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina"
+    #       weight: 1
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina-spot"
+    #       weight: 100
 
-    podAntiAffinity:
-      # Optional configuration for api product anti affinity
-      values: {}
-      # values:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     - topologyKey: "kubernetes.io/hostname"
-      #       labelSelector:
-      #         matchExpressions:
-      #           - key: "app"
-      #             operator: "In"
-      #             values:
-      #               - "limina-api"
+    # Optional configuration for api product anti affinity
+    podAntiAffinity: {}
+    # Example podAntiAffinity:
+    # podAntiAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     - topologyKey: "kubernetes.io/hostname"
+    #       labelSelector:
+    #         matchExpressions:
+    #           - key: "app"
+    #             operator: "In"
+    #             values:
+    #               - "limina-api"
 
     topologySpreadConstraints:
       values: []
@@ -361,6 +360,21 @@ core:
   deployment:
     # Sets the number of replicas for the Limina deployment
     replicaCount: 1
+
+    # Configuration for the GPU
+    # Ensure you update the image to a -gpu or -gpu-text flavour
+    gpu: {}
+    # Example gpu settings
+    # gpu:
+    #   sizeLimit: "4Gi"
+    #   limits:
+    #     nvidia.com/gpu: 1
+    #   tolerations:
+    #     values:
+    #       - key: "dedicated"
+    #         operator: "Equal"
+    #         value: "gpu"
+    #         effect: "NoSchedule"
 
     # Specify selector matchLabels for core
     selector:
@@ -447,40 +461,38 @@ core:
       failureThreshold: 3
       timeoutSeconds: 1
 
-    # These are the values for the affinity
+    # Configuration for node affinity
     # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
-    nodeAffinity:
-      values: {}
-      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
-      # and after on nodes with the label "limina"
-      # values:
-      #   preferredDuringSchedulingIgnoredDuringExecution:
-      #     - preference:
-      #         matchExpressions:
-      #           - key: "nodetype"
-      #             operator: "In"
-      #             values:
-      #               - "limina"
-      #       weight: 1
-      #     - preference:
-      #         matchExpressions:
-      #           - key: "nodetype"
-      #             operator: "In"
-      #             values:
-      #               - "limina-spot"
-      #       weight: 100
+    nodeAffinity: {}
+    # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+    # and after on nodes with the label "limina"
+    # nodeAffinity:
+    #   preferredDuringSchedulingIgnoredDuringExecution:
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina"
+    #       weight: 1
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina-spot"
+    #       weight: 100
 
+    # Recommended configuration to ensure only one Limina core container is scheduled per node
     podAntiAffinity:
-      # Recommended configuration to ensure only one Limina core container is scheduled per node
-      values:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: "kubernetes.io/hostname"
-            labelSelector:
-              matchExpressions:
-                - key: "app"
-                  operator: "In"
-                  values:
-                    - "limina-core"
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: "kubernetes.io/hostname"
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: "In"
+                values:
+                  - "limina-core"
 
     topologySpreadConstraints:
       values: []
@@ -564,7 +576,7 @@ custodian:
       name: "afp-worker"
       pullPolicy: "IfNotPresent"
       # It is recommended to pin to a specific version for production environments
-      tag: "0.10.3"
+      tag: "0.10.4"
 
     # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
     limits: {}
@@ -591,41 +603,40 @@ custodian:
     #       secret:
     #         secretName: "mount-secret"
 
-    # These are the values for the affinity
+    # Configuration for node affinity
     # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
-    nodeAffinity:
-      values: {}
-      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
-      # and after on nodes with the label "limina"
-      # values:
-      #   preferredDuringSchedulingIgnoredDuringExecution:
-      #     - preference:
-      #         matchExpressions:
-      #           - key: "nodetype"
-      #             operator: "In"
-      #             values:
-      #               - "limina"
-      #       weight: 1
-      #     - preference:
-      #         matchExpressions:
-      #           - key: "nodetype"
-      #             operator: "In"
-      #             values:
-      #               - "limina-spot"
-      #       weight: 100
+    nodeAffinity: {}
+    # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+    # and after on nodes with the label "limina"
+    # nodeAffinity:
+    #   preferredDuringSchedulingIgnoredDuringExecution:
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina"
+    #       weight: 1
+    #     - preference:
+    #         matchExpressions:
+    #           - key: "nodetype"
+    #             operator: "In"
+    #             values:
+    #               - "limina-spot"
+    #       weight: 100
 
-    podAntiAffinity:
-      # Optional configuration for custodian product anti affinity
-      values: {}
-      # values:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     - topologyKey: "kubernetes.io/hostname"
-      #       labelSelector:
-      #         matchExpressions:
-      #           - key: "app"
-      #             operator: "In"
-      #             values:
-      #               - "limina-custodian"
+    # Optional configuration for custodian product anti affinity
+    podAntiAffinity: {}
+    # Example configuration for pod anti affinity:
+    # podAntiAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     - topologyKey: "kubernetes.io/hostname"
+    #       labelSelector:
+    #         matchExpressions:
+    #           - key: "app"
+    #             operator: "In"
+    #             values:
+    #               - "limina-custodian"
 
     topologySpreadConstraints:
       values: []
@@ -671,7 +682,7 @@ processor:
       name: "afp-worker"
       pullPolicy: "IfNotPresent"
       # It is recommended to pin to a specific version for production environments
-      tag: "0.10.3"
+      tag: "0.10.4"
 
     # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
     limits: {}
