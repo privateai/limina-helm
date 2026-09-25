@@ -61,6 +61,37 @@ helm uninstall --namespace limina limina
 ## Additional Configuration
 To customize your deployment, enable different sections of your values.yaml file as per the documentation below.
 
+### Enable GPU
+In order to enable GPU processing, it is recommended that you first deploy a gpu-enabled node to your cluster with a taint, such as `dedicated=gpu:NoSchedule`
+
+Once the node is available, update the following sections in your customized values file
+```yaml
+core:
+  deployment:
+    gpu:
+      sizeLimit: "4Gi"
+      limits:
+        nvidia.com/gpu: 1
+      tolerations:
+        values:
+          - key: "dedicated"
+            operator: "Equal"
+            value: "gpu"
+            effect: "NoSchedule"
+    image:
+      tag: "4.5.0-gpu" # or "4.5.0-gpu-text"
+```
+
+Proceed with installing limina via helm into the limina namespace
+```console
+helm upgrade --install \
+  limina oci://crprivateaiprod.azurecr.io/helm/limina \
+  --namespace limina \
+  -f "$(date +%Y%m%d).values.yaml" \
+  --version 0.1.0
+```
+
+
 ### Async File Support
 Async File Support adds an additional set of containers to your cluster that will simplify managing both large (or complex) files, as well as large numbers of files. You can read more about the architecture [here](https://docs.getlimina.ai).
 
@@ -101,7 +132,6 @@ helm upgrade --install \
   -f "$(date +%Y%m%d).values.yaml" \
   --version 0.1.0
 ```
-
 
 
 ### Ingress Controller
