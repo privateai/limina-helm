@@ -172,11 +172,19 @@ helm upgrade --install \
 
 # Required setting for Azure, see https://github.com/haproxytech/helm-charts/tree/main/kubernetes-ingress#installing-on-azure-managed-kubernetes-service-aks
 #  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+```
+Update your custom values.yaml file with the appropriate values under the core ingress
+```yaml
+core:
+  ingress:
+    enabled: true
+    ingressClassName: "haproxy"
+    host: "api.ingress.domain.com"
+    tlsSecretName: "limina-api-tls"
+```
 
-
-# Update your custom values.yaml file with the appropriate values under ingress
-
-# Proceed with installing limina via helm into the limina namespace
+Proceed with installing limina via helm into the limina namespace
+```console
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
