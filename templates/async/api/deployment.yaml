@@ -84,13 +84,13 @@ spec:
           {{- with .Values.api.deployment.additionalMounts.volumes }}
             {{- toYaml . | nindent 8 }}
           {{- end }}
-      {{- if or .Values.api.deployment.nodeAffinity.values .Values.api.deployment.podAntiAffinity.values }}
+      {{- if or .Values.api.deployment.nodeAffinity .Values.api.deployment.podAntiAffinity }}
       affinity:
-        {{- with .Values.api.deployment.nodeAffinity.values }}
+        {{- with .Values.api.deployment.nodeAffinity }}
         nodeAffinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with .Values.api.deployment.podAntiAffinity.values }}
+        {{- with .Values.api.deployment.podAntiAffinity }}
         podAntiAffinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
