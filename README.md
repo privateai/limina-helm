@@ -211,22 +211,62 @@ helm upgrade --install \
   --namespace limina
 
 # Create two secrets, one for the license file and one for the docker credentials, in your external secret store of choice
-# You can optionally create a secret for environment variables to configure the Limina container
+# You can optionally create a secret for environment variables to configure the Limina core container, or for the Limina ingress TLS
 ```
 
 #### AWS Secrets Manager Steps
-Example AWS secret for Limina license file
+##### Example AWS secret for Limina license file
 ![license-type](./images/aws-license-type.png)
 ![license-name](./images/aws-license-name.png)
-Example AWS secret for Limina docker credentials
+##### Example AWS secret for Limina docker credentials
 ![docker-type](./images/aws-docker-type.png)
 ![docker-name](./images/aws-docker-name.png)
-Example AWS secret for Limina environment variables
-This is optional, and can be enabled or disabled in the values file.
+##### Example AWS secret for Limina environment variables
 ![env-type](./images/aws-env-type.png)
 ![env-name](./images/aws-env-name.png)
+##### Example AWS secret for Limina ingress TLS
 
-Next, configure the AWS Secret Store. See [the AWS Secrets Manager docs](https://external-secrets.io/latest/provider/aws-secrets-manager/) for detailed instructions.
+The TLS certificate for the example must be generated / stored as a binary file. Follow the steps below:
+
+Create a TLS configuration file named ingress.cnf with the appropriate values updated. You can list multiple SAN entries, if neccessary.
+```console
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+x509_extensions    = v3_req
+prompt             = no
+
+[ req_distinguished_name ]
+C                  = CA
+ST                 = Ontario
+L                  = Toronto
+O                  = Limina
+OU                 = Engineering
+CN                 = api.ingress.domain.com
+
+[ v3_req ]
+keyUsage           = critical, digitalSignature, keyEncipherment
+extendedKeyUsage   = serverAuth
+subjectAltName     = @alt_names
+
+[ alt_names ]
+DNS.1              = api.ingress.domain.com
+```
+
+Create a private key and certificate (note: certificate issuance / signing from a CA is beyond the scope of this guide)
+```console
+openssl req -x509 -newkey rsa:2048 -nodes -keyout ingress.key -out ingress.crt -days 365 -config ingress.cnf
+openssl pkcs12 -export -out ingress.p12 -inkey ingress.key -in ingress.crt
+base64 -i ingress.p12 -o ingress_encoded.txt
+```
+
+Create the secret in AWS via the AWS CLI
+```console
+aws secretsmanager create-secret --name limina-api-tls --secret-binary fileb://ingress.p12
+```
+
+##### Configure the AWS Secret Store.
+See [the AWS Secrets Manager docs](https://external-secrets.io/latest/provider/aws-secrets-manager/) for detailed instructions.
 ```console
 # Create a secret-store within the limina namespace
 # Example AWS secret store based on access key:
