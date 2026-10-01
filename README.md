@@ -179,8 +179,8 @@ core:
   ingress:
     enabled: true
     ingressClassName: "haproxy"
-    host: "api.ingress.domain.com"
-    tlsSecretName: "limina-api-tls"
+    host: "core.ingress.domain.com"
+    tlsSecretName: "limina-core-tls"
 ```
 
 Proceed with installing limina via helm into the limina namespace

@@ -43,7 +43,7 @@ To get the status of the api load balancer, run the following
 To test the api service connectivity, run the following
   {{- if eq "AWS" .Values.cloudProvider }}
       export API_SERVICE_IP=$(kubectl get service --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-api --template "{{"{{ range .status.loadBalancer.ingress }}{{ .hostname }}{{ end }}"}}")
-  {{- else if eq "Azure" .Values.cloudProvder }}
+  {{- else if eq "Azure" .Values.cloudProvider }}
       export API_SERVICE_IP=$(kubectl get service --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-api --template "{{"{{ range .status.loadBalancer.ingress }}{{ .ip }}{{ end }}"}}")
   {{- end }}
       curl http://$API_SERVICE_IP:{{ .Values.api.service.port }}
