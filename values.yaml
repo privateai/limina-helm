@@ -147,10 +147,10 @@ api:
   service:
     # Add custom annotations to the service
     annotations: {}
-    # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic
+    # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
     # annotations:
     #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic
+    # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
     # annotations:
     #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 
@@ -161,6 +161,25 @@ api:
     port: 80
 
     targetPort: &apiTargetPort 80
+
+  # Configuration for a kubernetes ingress for the api product
+  # Requires haproxy-ingress and cert-manager to be installed
+  ingress:
+    # Enable or disable the ingress configuration
+    enabled: false
+    # Set the class to handle the ingress traffic. Default to haproxy
+    ingressClassName: "haproxy"
+    # Set your own custom annotations, see https://www.haproxy.com/documentation/kubernetes-ingress/community/configuration-reference/ingress/
+    annotations: {}
+    # Example to rate limit to 15 requests per minute
+    # annotations:
+    #   haproxy.org/rate-limit-requests: 15
+    #   haproxy.org/rate-limit-period: "1m"
+    # Provision selfsigned certificates by default via cert-manager. Change if you wish to customize
+    selfsigned: true
+    # Replace this with the domain name for the ingress
+    host: "api.ingress.domain.com"
+    tlsSecretName: "limina-api-tls"
 
   # Configuration related to the api deployment
   deployment:
@@ -340,10 +359,10 @@ core:
   service:
     # Add custom annotations to the service
     annotations: {}
-    # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic
+    # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
     # annotations:
     #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic
+    # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
     # annotations:
     #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 
@@ -355,6 +374,25 @@ core:
 
     # Set the target port for the deployment
     targetPort: &coreTargetPort 8080
+
+  # Configuration for a kubernetes ingress for the core product
+  # Requires haproxy-ingress and cert-manager to be installed
+  ingress:
+    # Enable or disable the ingress configuration
+    enabled: false
+    # Set the class to handle the ingress traffic. Default to haproxy
+    ingressClassName: "haproxy"
+    # Set your own custom annotations, see https://www.haproxy.com/documentation/kubernetes-ingress/community/configuration-reference/ingress/
+    annotations: {}
+    # Example to rate limit to 15 requests per minute
+    # annotations:
+    #   haproxy.org/rate-limit-requests: 15
+    #   haproxy.org/rate-limit-period: "1m"
+    # Provision selfsigned certificates by default via cert-manager. Change if you wish to customize
+    selfsigned: true
+    # Replace this with the domain name for the ingress
+    host: "core.ingress.domain.com"
+    tlsSecretName: "limina-core-tls"
 
   # Configuration related to the core deployment
   deployment:
@@ -518,25 +556,6 @@ core:
       #     value: "limina"
       #     effect: "NoSchedule"
 
-  # Specifies whether to deploy the kubernetes core ingress
-  # Requires haproxy-ingress and cert-manager to be installed
-  ingress:
-    # Enable or disable the ingress configuration
-    enabled: false
-    # Set the class to handle the ingress traffic. Default to haproxy
-    ingressClassName: "haproxy"
-    # Set your own custom annotations, see https://www.haproxy.com/documentation/kubernetes-ingress/community/configuration-reference/ingress/
-    annotations: {}
-    # Example to rate limit to 15 requests per minute
-    # annotations:
-    #   haproxy.org/rate-limit-requests: 15
-    #   haproxy.org/rate-limit-period: "1m"
-    # Provision selfsigned certificates by default via cert-manager. Change if you wish to customize
-    selfsigned: true
-    # Replace this with the domain name for the ingress
-    host: "ingress.domain.com"
-    tlsSecretName: "limina-tls"
-
 # This section contains all information related to the Limina custodian product
 # This is disabled by default, and only required if you plan to use the async support
 custodian:
@@ -545,8 +564,6 @@ custodian:
     data:
       - name: "WORKER_ROLE"
         value: "custodian"
-      # - name: "LOG_LEVEL"
-      #   value: "info"
 
   # Configuration related to the custodian deployment
   deployment:
@@ -761,3 +778,33 @@ externalSecrets:
     # This is the reference to the name of the secret from the secret store
     # All properties will be added from the secret in the secret store to the container environment variables
     remoteRefKey: "limina-shared"
+  # Configuration for the Limina api product TLS secret
+  tlsApi:
+    # Enables or disables external secret for TLS
+    enabled: false
+    # Optional annotations for the shared externalsecret and secret objects
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+    # Set the refresh interval to check for updated secrets
+    refreshInterval: "1h"
+    # This is the reference to the name of the secret from the secret store
+    # All properties will be added from the secret in the secret store to the container environment variables
+    remoteRefKey: "limina-api-tls"
+  # Configuration for the Limina core product TLS secret
+  tlsCore:
+    # Enables or disables external secret for TLS
+    enabled: false
+    # Optional annotations for the shared externalsecret and secret objects
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+    # Set the refresh interval to check for updated secrets
+    refreshInterval: "1h"
+    # This is the reference to the name of the secret from the secret store
+    # All properties will be added from the secret in the secret store to the container environment variables
+    remoteRefKey: "limina-core-tls"
