@@ -28,7 +28,7 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.0 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.1 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the license.data section of the custom values.yaml file with single quotes surrounding, as per below
   license:
@@ -48,7 +48,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 ## Testing
@@ -88,7 +88,7 @@ core:
             value: "gpu"
             effect: "NoSchedule"
     image:
-      tag: "4.5.0-gpu" # or "4.5.0-gpu-text"
+      tag: "4.5.1.2-gpu" # or "4.5.1.2-gpu-text"
 ```
 
 Proceed with installing limina via helm into the limina namespace
@@ -97,7 +97,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 
@@ -140,7 +140,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 
@@ -199,7 +199,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 ### External Secrets Operator
@@ -408,5 +408,5 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```

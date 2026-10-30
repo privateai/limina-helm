@@ -11,4 +11,4 @@ core:
             value: "gpu"
             effect: "NoSchedule"
     image:
-      tag: "4.5.0-gpu"
+      tag: "4.5.1.2-gpu"
