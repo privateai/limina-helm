@@ -1,0 +1,7 @@
+shared:
+  async:
+    enabled: true
+  secrets:
+    data:
+      - name: "REDIS_KEY"
+        value: "ci-redis-key"

@@ -34,6 +34,15 @@ helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.0 > "$(date +%
   license:
     data: '{"id":"1", "tier": "..."}'
 
+# By default, the Limina core pod is only scheduled onto nodes labelled container=limina-core
+# Label the node(s) that should run Limina core (one core pod is scheduled per labelled node)
+kubectl get nodes
+kubectl label node NODE_NAME container=limina-core
+# Alternatively, to allow Limina core to run on any node, set the following in your custom values file
+#  core:
+#    deployment:
+#      nodeSelector: {}
+
 # Install the limina chart with a name and namespace of limina
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
@@ -106,7 +115,8 @@ Steps:
 shared:
   async:
     enabled: true
-    data: 
+  secrets:
+    data:
       - name: "REDIS_KEY"
         value: "enter_redis_key" # Enter redis key here if you do not plan to use external secret operator
   pvc:
@@ -278,7 +288,7 @@ kubectl apply -f aws-secret-store.yaml
 apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
-  name: secret-store
+  name: limina-store
   namespace: limina
 spec:
   provider:
@@ -372,7 +382,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
-  name: azure-backend
+  name: limina-store
   namespace: limina
 spec:
   provider:
@@ -384,11 +394,12 @@ spec:
 EOF
 ```
 
-Update your custom values.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure to update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
+Update your custom values.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure `secretStoreName` matches the name of the SecretStore you created above, and update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
 
 ```yaml
-externalsecrets:
+externalSecrets:
   enabled: true
+  secretStoreName: "limina-store"
 ```
 
 Proceed with installing the helm chart

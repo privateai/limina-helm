@@ -26,3 +26,7 @@
 .github
 *.values.yaml
 images/
+ci/
+CLAUDE.md
+.claude/
+Makefile

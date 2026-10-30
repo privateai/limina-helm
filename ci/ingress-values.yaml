@@ -1,0 +1,11 @@
+shared:
+  async:
+    enabled: true
+
+core:
+  ingress:
+    enabled: true
+
+api:
+  ingress:
+    enabled: true
