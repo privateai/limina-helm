@@ -1,0 +1,14 @@
+core:
+  deployment:
+    gpu:
+      sizeLimit: "4Gi"
+      limits:
+        nvidia.com/gpu: 1
+      tolerations:
+        values:
+          - key: "dedicated"
+            operator: "Equal"
+            value: "gpu"
+            effect: "NoSchedule"
+    image:
+      tag: "4.5.1.2-gpu"

@@ -28,18 +28,27 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.0 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.1 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the license.data section of the custom values.yaml file with single quotes surrounding, as per below
   license:
     data: '{"id":"1", "tier": "..."}'
+
+# By default, the Limina core pod is only scheduled onto nodes labelled container=limina-core
+# Label the node(s) that should run Limina core (one core pod is scheduled per labelled node)
+kubectl get nodes
+kubectl label node NODE_NAME container=limina-core
+# Alternatively, to allow Limina core to run on any node, set the following in your custom values file
+#  core:
+#    deployment:
+#      nodeSelector: {}
 
 # Install the limina chart with a name and namespace of limina
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 ## Testing
@@ -79,7 +88,7 @@ core:
             value: "gpu"
             effect: "NoSchedule"
     image:
-      tag: "4.5.0-gpu" # or "4.5.0-gpu-text"
+      tag: "4.5.1.2-gpu" # or "4.5.1.2-gpu-text"
 ```
 
 Proceed with installing limina via helm into the limina namespace
@@ -88,7 +97,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 
@@ -106,7 +115,8 @@ Steps:
 shared:
   async:
     enabled: true
-    data: 
+  secrets:
+    data:
       - name: "REDIS_KEY"
         value: "enter_redis_key" # Enter redis key here if you do not plan to use external secret operator
   pvc:
@@ -130,7 +140,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 
@@ -189,7 +199,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
 
 ### External Secrets Operator
@@ -278,7 +288,7 @@ kubectl apply -f aws-secret-store.yaml
 apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
-  name: secret-store
+  name: limina-store
   namespace: limina
 spec:
   provider:
@@ -372,7 +382,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
-  name: azure-backend
+  name: limina-store
   namespace: limina
 spec:
   provider:
@@ -384,11 +394,12 @@ spec:
 EOF
 ```
 
-Update your custom values.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure to update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
+Update your custom values.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure `secretStoreName` matches the name of the SecretStore you created above, and update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
 
 ```yaml
-externalsecrets:
+externalSecrets:
   enabled: true
+  secretStoreName: "limina-store"
 ```
 
 Proceed with installing the helm chart
@@ -397,5 +408,5 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.0
+  --version 0.1.1
 ```
