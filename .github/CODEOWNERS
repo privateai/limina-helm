@@ -1,4 +1,4 @@
 # CODEOWNERS
-/.github/CODEOWNERS kory.fong@private-ai.com
-
 * @privateai/internal-apps
+
+/.github/CODEOWNERS kory.fong@private-ai.com
