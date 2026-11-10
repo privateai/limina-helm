@@ -855,12 +855,12 @@ platform:
   middleware:
     # Update environment variables to customize your deployment
     configmap:
-      data: []
-      # data:
-      #   - name: "LOG_LEVEL_MIDDLEWARE"
-      #     value: "INFO"
-      #   - name: "AUTH_PROVIDERS"
-      #     value: '[{"name": "google", "issuer": "https://accounts.google.com", "audience": "your-google-client-id"}]'
+      data:
+        # Example using Google Auth provider. See https://docs.getlimina.ai for more providers
+        - name: "AUTH_PROVIDERS"
+          value: '[{"name": "google", "issuer": "https://accounts.google.com", "audience": "your-google-client-id"}]'
+        # - name: "LOG_LEVEL_MIDDLEWARE"
+        #   value: "INFO"
 
     # Database migrations, run as an init container before the middleware starts
     migrations:
