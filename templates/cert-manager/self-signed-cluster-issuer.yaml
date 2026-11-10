@@ -1,4 +1,4 @@
-{{- if and .Values.core.ingress.enabled .Values.core.ingress.selfsigned }}
+{{- if or (and .Values.core.ingress.enabled .Values.core.ingress.selfsigned) (and .Values.platform.shared.enabled .Values.platform.ui.ingress.enabled .Values.platform.ui.ingress.selfsigned) }}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:

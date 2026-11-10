@@ -1,0 +1,39 @@
+platform:
+  shared:
+    enabled: true
+    serviceAccount:
+      create: true
+      annotations:
+        eks.amazonaws.com/role-arn: "arn:aws:iam::111122223333:role/ci-platform"
+    secrets:
+      data:
+        - name: "REDIS_PASSWORD"
+          value: "ci-redis-password"
+        - name: "POSTGRES_USER"
+          value: "ci-user"
+        - name: "POSTGRES_PASSWORD"
+          value: "ci-password"
+  middleware:
+    configmap:
+      data:
+        - name: "LOG_LEVEL_MIDDLEWARE"
+          value: "DEBUG"
+    migrations:
+      requests:
+        cpu: "100m"
+        memory: "100Mi"
+  worker:
+    configmap:
+      data:
+        - name: "WORKER_MAX_PROCESSOR"
+          value: 2
+    deployment:
+      image:
+        repository: "111122223333.dkr.ecr.us-east-1.amazonaws.com"
+  ui:
+    secrets:
+      data:
+        - name: "BETTER_AUTH_SECRET"
+          value: "ci-auth-secret"
+    ingress:
+      enabled: true

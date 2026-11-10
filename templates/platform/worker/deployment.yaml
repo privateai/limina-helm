@@ -1,0 +1,93 @@
+{{- if .Values.platform.shared.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limina.fullname" . }}-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.platform.worker.deployment.replicaCount }}
+  selector:
+    {{- with .Values.platform.worker.deployment.selector.matchLabels }}
+    matchLabels:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  strategy:
+    type: {{ .Values.platform.worker.deployment.strategy.type }}
+  template:
+    metadata:
+      {{- with .Values.platform.worker.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.platform.worker.deployment.selector.matchLabels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with include "limina.platform.serviceAccountName" . }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets.name }}
+      {{- with .Values.platform.worker.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "limina.fullname" . }}-worker
+          image: {{ include "limina.image" (dict "image" .Values.platform.worker.deployment.image "root" .) | quote }}
+          imagePullPolicy: {{ .Values.platform.worker.deployment.image.pullPolicy }}
+          {{- if or .Values.platform.worker.deployment.limits .Values.platform.worker.deployment.requests }}
+          resources:
+            {{- with .Values.platform.worker.deployment.limits }}
+            limits:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with .Values.platform.worker.deployment.requests }}
+            requests:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-worker
+                optional: true
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-platform
+            - secretRef:
+                name: {{ include "limina.fullname" . }}-platform
+          volumeMounts:
+            - name: platform-filestore
+              mountPath: {{ .Values.platform.shared.mountPath }}
+              {{- with .Values.platform.worker.deployment.additionalMounts.volumeMounts }}
+                {{- toYaml . | nindent 12 }}
+              {{- end }}
+      volumes:
+        - name: platform-filestore
+          persistentVolumeClaim:
+            claimName: {{ include "limina.platform.claimName" . }}
+          {{- with .Values.platform.worker.deployment.additionalMounts.volumes }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+      {{- if or .Values.platform.worker.deployment.nodeAffinity .Values.platform.worker.deployment.podAntiAffinity }}
+      affinity:
+        {{- with .Values.platform.worker.deployment.nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.platform.worker.deployment.podAntiAffinity }}
+        podAntiAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.platform.worker.deployment.topologySpreadConstraints.values }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.platform.worker.deployment.tolerations.values }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

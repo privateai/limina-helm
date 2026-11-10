@@ -1,4 +1,4 @@
-{{- if and .Values.api.ingress.enabled .Values.api.ingress.selfsigned }}
+{{- if and .Values.async.api.ingress.enabled .Values.async.api.ingress.selfsigned }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -9,12 +9,12 @@ metadata:
     "helm.sh/hook-weight": "2"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
-  secretName: {{ .Values.api.ingress.tlsSecretName }}
+  secretName: {{ .Values.async.api.ingress.tlsSecretName }}
   privateKey:
     rotationPolicy: Always
-  commonName: {{ .Values.api.ingress.host }}
+  commonName: {{ .Values.async.api.ingress.host }}
   dnsNames:
-    - {{ .Values.api.ingress.host }}
+    - {{ .Values.async.api.ingress.host }}
   usages:
     - digital signature
     - key encipherment

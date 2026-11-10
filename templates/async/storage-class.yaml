@@ -1,26 +1,26 @@
-{{- if .Values.shared.async.enabled }}
+{{- if .Values.async.shared.enabled }}
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: {{ include "limina.fullname" . }}-async
-  {{- with .Values.shared.storageClass.annotations }}
+  {{- with .Values.async.shared.storageClass.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
-provisioner: {{ .Values.shared.storageClass.provisioner }}
-{{- with .Values.shared.storageClass.allowedTopologies }}
+provisioner: {{ .Values.async.shared.storageClass.provisioner }}
+{{- with .Values.async.shared.storageClass.allowedTopologies }}
 allowedTopologies:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.shared.storageClass.mountOptions }}
+{{- with .Values.async.shared.storageClass.mountOptions }}
 mountOptions:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.shared.storageClass.parameters }}
+{{- with .Values.async.shared.storageClass.parameters }}
 parameters:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-volumeBindingMode: {{ .Values.shared.storageClass.volumeBindingMode }}
+volumeBindingMode: {{ .Values.async.shared.storageClass.volumeBindingMode }}
 {{- end }}

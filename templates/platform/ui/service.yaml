@@ -1,0 +1,24 @@
+{{- if .Values.platform.shared.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "limina.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.platform.ui.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.platform.ui.service.type }}
+  ports:
+    - port: {{ .Values.platform.ui.service.port }}
+      targetPort: {{ .Values.platform.ui.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- with .Values.platform.ui.deployment.selector.matchLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

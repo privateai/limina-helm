@@ -1,0 +1,20 @@
+{{- if .Values.platform.shared.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "limina.platform.claimName" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.platform.shared.pvc.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.platform.shared.pvc.accessModes }}
+  storageClassName: {{ include "limina.fullname" . }}-platform
+  resources:
+    requests:
+      storage: {{ .Values.platform.shared.pvc.storage }}
+{{- end }}

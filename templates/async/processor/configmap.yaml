@@ -1,4 +1,4 @@
-{{- if and .Values.shared.async.enabled .Values.processor.configmap.data }}
+{{- if and .Values.async.shared.enabled .Values.async.processor.configmap.data }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "limina.labels" . | nindent 4 }}
 data:
-{{- range .Values.processor.configmap.data }}
+{{- range .Values.async.processor.configmap.data }}
   {{ .name }}: {{ .value | quote }}
 {{- end }}
 {{- end }}

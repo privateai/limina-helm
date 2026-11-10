@@ -1,0 +1,17 @@
+{{- if .Values.platform.shared.enabled }}
+{{- $data := dict "LIMINA_CORE_URL" (printf "http://%s-core:%v" (include "limina.fullname" .) .Values.core.service.port) "STORAGE_PATH" .Values.platform.shared.mountPath }}
+{{- range .Values.platform.shared.configmap.data }}
+{{- $_ := set $data .name .value }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "limina.fullname" . }}-platform
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+data:
+{{- range $name, $value := $data }}
+  {{ $name }}: {{ $value | quote }}
+{{- end }}
+{{- end }}

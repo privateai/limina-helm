@@ -28,9 +28,10 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.1 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.2.0 > "$(date +%Y%m%d).values.yaml"
 
-# Copy your license.json file contents and paste them into the license.data section of the custom values.yaml file with single quotes surrounding, as per below
+# Copy your license.json file contents and paste them into the core.license.data section of the custom values.yaml file with single quotes surrounding, as per below
+core:
   license:
     data: '{"id":"1", "tier": "..."}'
 
@@ -39,16 +40,16 @@ helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.1.1 > "$(date +%
 kubectl get nodes
 kubectl label node NODE_NAME container=limina-core
 # Alternatively, to allow Limina core to run on any node, set the following in your custom values file
-#  core:
-#    deployment:
-#      nodeSelector: {}
+core:
+  deployment:
+    nodeSelector: {}
 
 # Install the limina chart with a name and namespace of limina
 helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.1
+  --version 0.2.0
 ```
 
 ## Testing
@@ -69,6 +70,48 @@ helm uninstall --namespace limina limina
 
 ## Additional Configuration
 To customize your deployment, enable different sections of your values.yaml file as per the documentation below.
+
+The values file is organized by product. Settings that apply to the whole chart sit at the top level, and each product has its own section:
+
+```yaml
+cloudProvider: "AWS"          # Global settings
+nameOverride: ""
+fullnameOverride: ""
+repository: "crprivateaiprod.azurecr.io"
+imagePullSecrets: {}
+
+core: {}                      # Limina core, always deployed
+
+async:                        # Async File Support
+  shared: {}                  # Settings shared by the async components, including async.shared.enabled
+  api: {}
+  custodian: {}
+  processor: {}
+
+platform:                     # Limina Platform
+  shared: {}                  # Settings shared by the platform components, including platform.shared.enabled
+  middleware: {}
+  ui: {}
+  worker: {}
+
+externalSecrets:              # External Secrets Operator settings, nested by product
+  secretStoreName: "limina-store"
+  secretStore: {}             # Optionally create the SecretStore with this chart
+  dockerCredential: {}
+  core:
+    enabled: false
+    license: {}
+    env: {}
+    tls: {}
+  async:
+    enabled: false
+    shared: {}
+    api: {}
+  platform:
+    enabled: false
+    shared: {}
+    ui: {}
+```
 
 ### Enable GPU
 In order to enable GPU processing, it is recommended that you first deploy a gpu-enabled node to your cluster with a taint, such as `dedicated=gpu:NoSchedule`
@@ -97,7 +140,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.1
+  --version 0.2.0
 ```
 
 
@@ -112,26 +155,30 @@ Prerequisites:
 Steps:
 - Update the following sections in your customized values file
 ```yaml
-shared:
-  async:
+async:
+  shared:
     enabled: true
-  secrets:
-    data:
-      - name: "REDIS_KEY"
-        value: "enter_redis_key" # Enter redis key here if you do not plan to use external secret operator
-  pvc:
-    storage: "200Gi" # Customize temporary file storage for async request and response objects
-  storageClass: # Add details for your specific environment
-  configmap:
-    data:
-      - name: "REDIS_HOST"
-        value: "enter_redis_host" # Enter the redis host so that the async components can access the job queue
-      - name: "REDIS_PORT"
-        value: 6380 # Enter your redis port
-      - name: "REDIS_ENABLE_SSL"
-        value: "true" # Control whether or not to connect to redis via TLS
+    secrets:
+      data:
+        - name: "REDIS_KEY"
+          value: "enter_redis_key" # Enter redis key here if you do not plan to use the External Secrets Operator
+    pvc:
+      storage: "200Gi" # Customize temporary file storage for async request and response objects
+    storageClass: # Add details for your specific environment
+    configmap:
+      data:
+        - name: "REDIS_HOST"
+          value: "enter_redis_host" # Enter the redis host so that the async components can access the job queue
+        - name: "REDIS_PORT"
+          value: 6380 # Enter your redis port
+        - name: "REDIS_ENABLE_SSL"
+          value: "true" # Control whether or not to connect to redis via TLS
 externalSecrets:
-  shared: # Add details for external secret here containing redis key if you prefer
+  async:
+    enabled: false # Set to true to read the redis key from your secret store instead
+    shared:
+      env:
+        remoteRefKey: "limina-shared" # The secret in your secret store containing the redis key
 ```
 
 - Proceed with installing limina via helm into the limina namespace
@@ -140,7 +187,143 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.1
+  --version 0.2.0
+```
+
+
+### Limina Platform
+The Limina Platform adds a web ui, a middleware api and a pool of background workers on top of Limina core. The platform is independent of Async File Support.
+
+When enabled, the chart deploys:
+- **middleware**: the platform api. Database migrations run as an init container before it starts (`platform.middleware.migrations`)
+- **worker**: background workers that process jobs from redis and call Limina core
+- **ui**: the web application, which talks to the middleware. This is the component you expose to users via an ingress
+- A shared persistent volume claim mounted by the middleware and worker, a shared configmap and secret, and an optional service account
+
+The chart sets `LIMINA_CORE_URL`, `STORAGE_PATH` and `MIDDLEWARE_URL` for you, so the components find each other without extra configuration.
+
+Prerequisites:
+- Your kubernetes cluster must have a CSI driver that allows multiple pods read/write access to the same file system
+- You must deploy a redis instance for job queuing, and a PostgreSQL database for platform data
+- You must ensure your kubernetes cluster has access to redis, PostgreSQL and your file system
+- You must configure an identity provider for user sign-in (e.g. a Google OAuth client)
+
+Steps:
+- Update the following sections in your customized values file
+```yaml
+platform:
+  shared:
+    enabled: true
+    configmap:
+      data:
+        - name: "REDIS_HOST"
+          value: "enter_redis_host"
+        - name: "REDIS_PORT"
+          value: 6379
+        - name: "REDIS_SSL"
+          value: "true"
+        - name: "POSTGRES_HOST"
+          value: "enter_postgres_host"
+        - name: "POSTGRES_PORT"
+          value: 5432
+        - name: "POSTGRES_DB"
+          value: "platform"
+    secrets:
+      data: # Ignored if you use the External Secrets Operator
+        - name: "REDIS_PASSWORD"
+          value: "enter_redis_password"
+        - name: "POSTGRES_USER"
+          value: "enter_postgres_user"
+        - name: "POSTGRES_PASSWORD"
+          value: "enter_postgres_password"
+    pvc:
+      storage: "100Gi" # Customize file storage for the platform
+    storageClass: # Add details for your specific environment
+  middleware:
+    configmap:
+      data:
+        - name: "AUTH_PROVIDERS"
+          value: '[{"name": "google", "issuer": "https://accounts.google.com", "audience": "enter_google_client_id"}]'
+  ui:
+    configmap:
+      data:
+        - name: "LIMINA_MODE"
+          value: "PLATFORM"
+        - name: "BETTER_AUTH_URL"
+          value: "https://platform.ingress.domain.com" # The external URL of the ui
+    secrets:
+      data: # Ignored if you use the External Secrets Operator
+        - name: "BETTER_AUTH_SECRET"
+          value: "enter_a_long_random_string"
+        - name: "GOOGLE_CLIENT_ID"
+          value: "enter_google_client_id"
+        - name: "GOOGLE_CLIENT_SECRET"
+          value: "enter_google_client_secret"
+    ingress:
+      enabled: true
+      host: "platform.ingress.domain.com"
+```
+
+- If you use the External Secrets Operator, set `externalSecrets.platform.enabled` to true. The platform and ui secrets are then read from `externalSecrets.platform.shared.env.remoteRefKey` and `externalSecrets.platform.ui.env.remoteRefKey`. By default the chart pulls the properties listed below from each remote secret. Update each `property` to match the property names in your secret store, or set `properties` to `[]` to add every property of the remote secret instead. Listing properties also lets both components share a single remote secret. To read a property from a different remote secret, set `remoteRefKey` on that property. For example, the database credentials below come from the secret that AWS RDS manages for the master user, and the redis password from the shared remote secret
+```yaml
+externalSecrets:
+  platform:
+    enabled: true
+    shared:
+      env:
+        remoteRefKey: "limina-platform-env"
+        properties:
+          - secretKey: "REDIS_PASSWORD"
+          - secretKey: "POSTGRES_USER"
+            remoteRefKey: "rds!db-00000000-0000-0000-0000-000000000000"
+            property: "username"
+          - secretKey: "POSTGRES_PASSWORD"
+            remoteRefKey: "rds!db-00000000-0000-0000-0000-000000000000"
+            property: "password"
+    ui:
+      env:
+        remoteRefKey: "limina-platform-env"
+        properties:
+          - secretKey: "BETTER_AUTH_SECRET"
+          - secretKey: "GOOGLE_CLIENT_ID"
+          - secretKey: "GOOGLE_CLIENT_SECRET"
+```
+
+- If the platform needs cloud permissions (e.g. AWS IRSA or Azure Workload Identity), create a service account for it
+```yaml
+platform:
+  shared:
+    serviceAccount:
+      create: true
+      annotations:
+        eks.amazonaws.com/role-arn: "arn:aws:iam::111122223333:role/limina-platform"
+```
+
+- On AWS, you can expose the ui through the AWS Load Balancer Controller with an ACM certificate instead of haproxy and cert-manager
+```yaml
+platform:
+  ui:
+    ingress:
+      enabled: true
+      ingressClassName: "alb"
+      selfsigned: false
+      host: "platform.ingress.domain.com"
+      annotations:
+        alb.ingress.kubernetes.io/scheme: "internet-facing"
+        alb.ingress.kubernetes.io/target-type: "ip"
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+        alb.ingress.kubernetes.io/ssl-redirect: "443"
+        alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:region:111122223333:certificate/certificate-id"
+        alb.ingress.kubernetes.io/healthcheck-path: "/healthz"
+```
+
+- Proceed with installing limina via helm into the limina namespace
+```console
+helm upgrade --install \
+  limina oci://crprivateaiprod.azurecr.io/helm/limina \
+  --namespace limina \
+  -f "$(date +%Y%m%d).values.yaml" \
+  --version 0.2.0
 ```
 
 
@@ -199,7 +382,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.1
+  --version 0.2.0
 ```
 
 ### External Secrets Operator
@@ -394,12 +577,60 @@ spec:
 EOF
 ```
 
-Update your custom values.yaml file to enable the external secrets operator, and disable the default secret creation. Ensure `secretStoreName` matches the name of the SecretStore you created above, and update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
+#### Creating the Secret Store with the chart
+Instead of applying the SecretStore and its service account with `kubectl`, you can have the chart create both in the release namespace. Set `externalSecrets.secretStore.create` to true and put the provider configuration under `externalSecrets.secretStore.provider`. It is rendered into the `spec.provider` of a SecretStore named `secretStoreName`, so any provider supported by the External Secrets Operator works. The SecretStore is only created when the External Secrets Operator is enabled for at least one product, and a SecretStore with the same name must not already exist in the namespace.
+
+By default the chart also creates a service account named after the release (`limina-secret-store` for a release named `limina`) that the SecretStore authenticates with. Add the annotations that bind it to your cloud identity under `externalSecrets.secretStore.serviceAccount.annotations`. For the `aws` provider and for the `azurekv` provider with `authType: "WorkloadIdentity"`, the chart references the service account in the provider configuration for you. For other providers, reference it yourself. The cloud identity must trust the service account:
+
+- AWS: the IAM role trust policy must allow `sts:AssumeRoleWithWebIdentity` from your cluster OIDC provider with the subject `system:serviceaccount:limina:limina-secret-store`, and the role needs `secretsmanager:GetSecretValue` on your secrets (plus `kms:Decrypt` for any secret encrypted with a customer managed key, such as the secret AWS RDS manages for the master user)
+- Azure: create the federated credential with the subject `system:serviceaccount:limina:limina-secret-store`, instead of creating the `azure-keyvault` service account above
 
 ```yaml
 externalSecrets:
-  enabled: true
   secretStoreName: "limina-store"
+  secretStore:
+    create: true
+    # AWS Secrets Manager, authenticating with an IAM role (IRSA)
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: "arn:aws:iam::111122223333:role/limina-secret-store"
+    provider:
+      aws:
+        service: "SecretsManager"
+        region: "ca-central-1"
+    # Azure Key Vault, authenticating with workload identity
+    # serviceAccount:
+    #   annotations:
+    #     azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
+    #     azure.workload.identity/tenant-id: "00000000-0000-0000-0000-000000000000"
+    # provider:
+    #   azurekv:
+    #     authType: "WorkloadIdentity"
+    #     vaultUrl: "https://your-key-vault.vault.azure.net/"
+```
+
+To use an existing service account in the namespace, set `serviceAccount.create` to false and `serviceAccount.name` to its name. To authenticate with the identity of the External Secrets Operator controller instead, set `serviceAccount.create` to false and leave `serviceAccount.name` empty.
+
+Update your custom values.yaml file to enable the external secrets operator for each product that should read its secrets from the secret store. Enabling it for a product disables the default secret creation for that product. Ensure `secretStoreName` matches the name of the SecretStore you created above (or the one the chart creates), and update the docker credentials and license remoteRefKey and properties as per the secret names and properties, respectively.
+
+```yaml
+externalSecrets:
+  secretStoreName: "limina-store"
+  dockerCredential:
+    enabled: true
+    remoteRefKey: "limina-docker"
+  core:
+    enabled: true
+    license:
+      remoteRefKey: "limina-license"
+    env:
+      enabled: false # Set to true to load Limina core environment variables from the secret store
+    tls:
+      enabled: false # Set to true to load the core ingress TLS certificate from the secret store
+  async:
+    enabled: false # Set to true if you use Async File Support
+  platform:
+    enabled: false # Set to true if you use the Limina Platform
 ```
 
 Proceed with installing the helm chart
@@ -408,5 +639,5 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.1.1
+  --version 0.2.0
 ```

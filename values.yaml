@@ -7,24 +7,19 @@ nameOverride: ""
 # Override the full name of the application
 fullnameOverride: ""
 
-# This section contains information shared across Limina products
-shared:
-  # Limina repository
-  repository: "crprivateaiprod.azurecr.io"
+# Limina image repository, used by every product unless overridden in a component's image.repository
+repository: "crprivateaiprod.azurecr.io"
 
-  # Enable or disable the async file support, defaults to false
-  # If enabled, you must configure the api section
-  async:
-    enabled: false
+# This secret will store your docker pull credentials. You can obtain these from the customer portal
+# If you enable externalSecrets.dockerCredential, this section will be ignored
+imagePullSecrets:
+  name: "crprivateaiprod-creds"
 
-  # This secret will store your docker pull credentials. You can obtain these from the customer portal
-  # If you enable the External Secrets Operator, this section will be ignored
-  imagePullSecrets:
-    name: "crprivateaiprod-creds"
-
+# This section contains all information related to the Limina core product
+core:
   # Settings for the Limina license file
   license:
-    # If you enable the External Secrets Operator, this section will be ignored
+    # If you enable externalSecrets.core, this section will be ignored
     # Sets the name of the license secret object
     name: "limina-license"
 
@@ -37,299 +32,10 @@ shared:
 
     # Specify license volume mount for all products
     volumeMount: "license-volume"
-    # If you use the External Secrets Operator, you can ignore this setting as the license file will be populated via a secret
+    # If you enable externalSecrets.core, you can ignore this setting as the license file will be populated via a secret
     # Override with your license data. See readme for more details
     data: '{"id": "1", "tier": "..."}'
 
-  # Optional shared secret, required if the async product is enabled
-  # If you use the External Secrets Operator, this section will be ignored
-  secrets:
-    # Add optional annotations for the shared secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-
-    # If you use the External Secrets Operator this section will be ignored
-    data: []
-    # data:
-    #   - name: "REDIS_KEY"
-    #     value: ""
-
-  # Specify the optional mount path for the async product
-  mountPath: &mountPath "/mnt/afp-files"
-
-  # Optional persistent volume claim settings required for async support. Leave defaults if not running async
-  pvc:
-    # Add optional annotations for the pvc
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-
-    # Specify the access mode for the persistent volume claim
-    accessModes: "ReadWriteMany"
-
-    # Set the size of the requested persistent volume claim
-    storage: "200Gi"
-
-  # Optional storage class settings required for async support. Leave defaults if not running async
-  storageClass:
-    # Add optional annotations for the storage class
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-
-    # Example for AWS using EFS
-    provisioner: "efs.csi.aws.com"
-    parameters:
-      provisioningMode: "efs-ap"
-      fileSystemId: "insert your pre-made efs file system id"
-      directoryPerms: "700"
-    volumeBindingMode: "WaitForFirstConsumer"
-
-    # Example for Azure using file storage
-    # provisioner: "file.csi.azure.com"
-    # mountOptions:
-    #   - dir_mode=0777
-    #   - file_mode=0777
-    #   - uid=0
-    #   - gid=0
-    #   - mfsymlinks
-    #   - cache=strict
-    # parameters:
-    #   skuName: "Standard_LRS"
-    #   shareName: "limina-async-files"
-
-  # Optional configmap data for customizing timeouts for async product
-  configmap:
-    data:
-      - name: "FILE_DIR"
-        value: *mountPath
-      - name: "REDIS_HOST"
-        value: "redis-url"
-      - name: "REDIS_PORT"
-        value: 6380
-      - name: "REDIS_ENABLE_SSL"
-        value: "true"
-      # - name: "STATE_TTL_SUBMITTED"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_IN_PROGRESS"
-      #   value: 43200 # 12 hours
-      # - name: "STATE_TTL_COMPLETED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_DOWNLOADED"
-      #   value: 600 # 10 minutes
-      # - name: "STATE_TTL_FAILED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_EXPIRED"
-      #   value: 3600 # 1 hour
-      # - name: "STATE_TTL_CANCELLED"
-      #   value: 3600 # 1 hour
-
-# This section contains all information related to the Limina api product
-# This is disabled by default, and only required if you plan to use the async support
-api:
-  # Update environment variables to customize your deployment
-  configmap:
-    data: []
-    # data:
-    #   - name: "LOG_LEVEL"
-    #     value: "info"
-    #   - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
-    #     value: 300
-
-  # Configuration related to the api service
-  service:
-    # Add custom annotations to the service
-    annotations: {}
-    # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
-    # annotations:
-    #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
-    # annotations:
-    #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
-
-    # Set the type for the service
-    type: "ClusterIP"
-
-    # Set the port for the service
-    port: 80
-
-    targetPort: &apiTargetPort 80
-
-  # Configuration for a kubernetes ingress for the api product
-  # Requires haproxy-ingress and cert-manager to be installed
-  ingress:
-    # Enable or disable the ingress configuration
-    enabled: false
-    # Set the class to handle the ingress traffic. Default to haproxy
-    ingressClassName: "haproxy"
-    # Set your own custom annotations, see https://www.haproxy.com/documentation/kubernetes-ingress/community/configuration-reference/ingress/
-    annotations: {}
-    # Example to rate limit to 15 requests per minute
-    # annotations:
-    #   haproxy.org/rate-limit-requests: 15
-    #   haproxy.org/rate-limit-period: "1m"
-    # Provision selfsigned certificates by default via cert-manager. Change if you wish to customize
-    selfsigned: true
-    # Replace this with the domain name for the ingress
-    host: "api.ingress.domain.com"
-    tlsSecretName: "limina-api-tls"
-
-  # Configuration related to the api deployment
-  deployment:
-    replicaCount: 1
-
-    # Specify selector matchLabels for api
-    selector:
-      matchLabels:
-        app: "limina-api"
-
-    # Specify a deployment strategy
-    strategy:
-      type: "RollingUpdate"
-
-    # Add custom pod annotations to the api deployment
-    podAnnotations: {}
-    # Example annotations
-    # podAnnotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value1"
-
-    # Specify a node selector to deploy limina api
-    nodeSelector: {}
-    # nodeSelector:
-    #   container: "limina-api"
-
-    image:
-      name: "afp-api"
-      pullPolicy: "IfNotPresent"
-      # It is recommended to pin to a specific version for production environments
-      tag: "0.10.4"
-
-    # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
-    limits: {}
-    # Use the following if you would like to add limits to the api product
-    # limits:
-    #   memory: "4Gi"
-    #   cpu: "2"
-
-    requests: {}
-    # Use the following if you would like to add requests to the api product
-    # requests:
-    #   memory: "2Gi"
-    #   cpu: "1"
-
-    # Add custom additional mounts
-    additionalMounts: {}
-    # Example mount configuration from a secret
-    # additionalMounts:
-    #   volumeMounts:
-    #     - name: "mount-name"
-    #       mountPath: "/mount/path"
-    #   volumes:
-    #     - name: "mount-name"
-    #       secret:
-    #         secretName: "mount-secret"
-
-    # These are the values for liveness, startup and readiness probes
-    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#probe-v1-core
-    # livenessProbe: {}
-    # Example livenessProbe. This is not recommended as it may cause pod instability
-    # livenessProbe:
-    #   httpGet:
-    #     path: "/healthz"
-    #     port: *apiTargetPort
-    #     scheme: "HTTP"
-    #   initialDelaySeconds: 5
-    #   periodSeconds: 60
-    #   failureThreshold: 5
-    #   timeoutSeconds: 1
-    startupProbe:
-      # Note: You should expect to see warnings for startup probe failures in the pod events until the container starts
-      httpGet:
-        path: "/healthz"
-        port: *apiTargetPort
-        scheme: "HTTP"
-      initialDelaySeconds: 5
-      periodSeconds: 5
-      failureThreshold: 23
-      timeoutSeconds: 1
-    readinessProbe:
-      httpGet:
-        path: "/healthz"
-        port: *apiTargetPort
-        scheme: "HTTP"
-      initialDelaySeconds: 5
-      periodSeconds: 10
-      failureThreshold: 3
-      timeoutSeconds: 1
-
-    # Configuration for node affinity
-    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
-    nodeAffinity: {}
-    # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
-    # and after on nodes with the label "limina"
-    # nodeAffinity:
-    #   preferredDuringSchedulingIgnoredDuringExecution:
-    #     - preference:
-    #         matchExpressions:
-    #           - key: "nodetype"
-    #             operator: "In"
-    #             values:
-    #               - "limina"
-    #       weight: 1
-    #     - preference:
-    #         matchExpressions:
-    #           - key: "nodetype"
-    #             operator: "In"
-    #             values:
-    #               - "limina-spot"
-    #       weight: 100
-
-    # Optional configuration for api product anti affinity
-    podAntiAffinity: {}
-    # Example podAntiAffinity:
-    # podAntiAffinity:
-    #   requiredDuringSchedulingIgnoredDuringExecution:
-    #     - topologyKey: "kubernetes.io/hostname"
-    #       labelSelector:
-    #         matchExpressions:
-    #           - key: "app"
-    #             operator: "In"
-    #             values:
-    #               - "limina-api"
-
-    topologySpreadConstraints:
-      values: []
-      # Use the following if you would like to spread your pods evenly across your infrastructure zones
-      # values:
-      #   - labelSelector:
-      #       matchLabels:
-      #         app.kubernetes.io/name: "limina"
-      #         app.kubernetes.io/instance: "limina"
-      #     matchLabelKeys:
-      #       - "pod-template-hash"
-      #     maxSkew: 1
-      #     topologyKey: "topology.kubernetes.io/zone"
-      #     whenUnsatisfiable: "ScheduleAnyway"
-
-    tolerations:
-      values: []
-      # Use the following if you have added a taint to your nodes of app=limina
-      # values:
-      #   - key: app
-      #     operator: "Equal"
-      #     value: "limina"
-      #     effect: "NoSchedule"
-
-# This section contains all information related to the Limina core product
-core:
   # Enter any environment variables for your deployment. You can find the list at https://docs.getlimina.ai/configuration-and-operations/container-management/environment-variables
   configmap:
     data: []
@@ -339,7 +45,7 @@ core:
     #     value: "true"
 
   # These secrets will be added to the environment variables for the Limina core deployment
-  # If you use the External Secrets Operator, this section will be ignored
+  # If you enable externalSecrets.core, this section will be ignored
   secrets:
     # Add optional annotations for the deployment secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
     annotations: {}
@@ -348,7 +54,7 @@ core:
     #   annotation-key1: "annotation-value1"
     #   annotation-key2: "annotation-value2"
 
-    # If you use the External Secrets Operator, you can ignore this section and populate via the externalsecrets section below
+    # If you enable externalSecrets.core, you can ignore this section and populate via externalSecrets.core.env
     data: []
     # Enter any environment variables for your deployment you wish to remain secret. Example: https://docs.getlimina.ai/configuration-and-operations/advanced-features/azure-ocr
     # data:
@@ -373,7 +79,7 @@ core:
     port: 80
 
     # Set the target port for the deployment
-    targetPort: &coreTargetPort 8080
+    targetPort: 8080
 
   # Configuration for a kubernetes ingress for the core product
   # Requires haproxy-ingress and cert-manager to be installed
@@ -435,12 +141,14 @@ core:
       container: "limina-core"
 
     image:
+      # Optionally override the top level repository for this image
+      repository: ""
       name: "deid"
       pullPolicy: "IfNotPresent"
       # Can be a direct version tag / container flavour (i.e. 4.0.4-cpu-text) OR a 'latest' tag (i.e. cpu, cpu-text, gpu, gpu-text)
       # It is recommended to pin to a specific version for production environments
       # If using -gpu or -gpu-text, ensure you complete the section core.deployment.gpu with the appropriate settings
-      tag: "4.5.1.2-cpu"
+      tag: "4.5.2-cpu"
 
     # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
     limits: {}
@@ -468,13 +176,13 @@ core:
     #         secretName: "mount-secret"
 
     # These are the values for liveness, startup and readiness probes
-    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#probe-v1-core
+    # https://kubernetes.io/docs/concepts/workloads/pods/probes/
     livenessProbe: {}
     # Example livenessProbe. This is not recommended as it may cause pod instability
     # livenessProbe:
     #   httpGet:
     #     path: "/healthz"
-    #     port: *coreTargetPort
+    #     port: http
     #     scheme: "HTTP"
     #   initialDelaySeconds: 60
     #   periodSeconds: 60
@@ -484,7 +192,7 @@ core:
       # Note: You should expect to see warnings for startup probe failures in the pod events until the container starts
       httpGet:
         path: "/healthz"
-        port: *coreTargetPort
+        port: http
         scheme: "HTTP"
       initialDelaySeconds: 5
       periodSeconds: 5
@@ -493,7 +201,7 @@ core:
     readinessProbe:
       httpGet:
         path: "/healthz"
-        port: *coreTargetPort
+        port: http
         scheme: "HTTP"
       initialDelaySeconds: 60
       periodSeconds: 20
@@ -501,7 +209,7 @@ core:
       timeoutSeconds: 1
 
     # Configuration for node affinity
-    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
+    # https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
     nodeAffinity: {}
     # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
     # and after on nodes with the label "limina"
@@ -553,176 +261,1169 @@ core:
       # values:
       #   - key: app
       #     operator: "Equal"
-      #     value: "limina"
+      #     value: "limina-core"
       #     effect: "NoSchedule"
 
-# This section contains all information related to the Limina custodian product
-# This is disabled by default, and only required if you plan to use the async support
-custodian:
-  # Update environment variables to customize your deployment
-  configmap:
-    data:
-      - name: "WORKER_ROLE"
-        value: "custodian"
+# This section contains all information related to the Limina async file support products
+async:
+  # Configuration shared by the async api, custodian and processor
+  shared:
+    # Enable or disable the async file support, defaults to false
+    # If enabled, you must also configure the api, custodian and processor sections
+    enabled: false
 
-  # Configuration related to the custodian deployment
-  deployment:
-    replicaCount: 1
+    # Specify the mount path of the shared file store for the api, custodian and processor
+    # This is passed to the containers as the FILE_DIR environment variable
+    mountPath: "/mnt/afp-files"
 
-    # Specify selector matchLabels for custodian
-    selector:
-      matchLabels:
-        app: "limina-custodian"
+    # Configmap data shared by the api, custodian and processor, including Redis connection settings and optional timeouts
+    # FILE_DIR is set automatically from mountPath, but can be overridden here
+    configmap:
+      data:
+        - name: "REDIS_HOST"
+          value: "redis-url"
+        - name: "REDIS_PORT"
+          value: 6380
+        - name: "REDIS_ENABLE_SSL"
+          value: "true"
+        # - name: "STATE_TTL_SUBMITTED"
+        #   value: 43200 # 12 hours
+        # - name: "STATE_TTL_IN_PROGRESS"
+        #   value: 43200 # 12 hours
+        # - name: "STATE_TTL_COMPLETED"
+        #   value: 3600 # 1 hour
+        # - name: "STATE_TTL_DOWNLOADED"
+        #   value: 600 # 10 minutes
+        # - name: "STATE_TTL_FAILED"
+        #   value: 3600 # 1 hour
+        # - name: "STATE_TTL_EXPIRED"
+        #   value: 3600 # 1 hour
+        # - name: "STATE_TTL_CANCELLED"
+        #   value: 3600 # 1 hour
 
-    # Specify a deployment strategy
-    strategy:
-      type: "RollingUpdate"
+    # Optional shared secret, required if the async product is enabled
+    # If you enable externalSecrets.async, this section will be ignored
+    secrets:
+      # Add optional annotations for the shared secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
 
-    # Add custom pod annotations to the custodian deployment
-    podAnnotations: {}
-    # Example annotations
-    # podAnnotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value1"
+      # If you enable externalSecrets.async this section will be ignored
+      data: []
+      # data:
+      #   - name: "REDIS_KEY"
+      #     value: ""
 
-    # Specify a node selector to deploy limina custodian
-    nodeSelector: {}
-    # nodeSelector:
-    #   container: "limina-custodian"
+    # Optional persistent volume claim settings required for async support. Leave defaults if not running async
+    pvc:
+      # Add optional annotations for the pvc
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
 
-    image:
-      name: "afp-worker"
-      pullPolicy: "IfNotPresent"
-      # It is recommended to pin to a specific version for production environments
-      tag: "0.10.4"
+      # Specify the access mode for the persistent volume claim
+      accessModes: "ReadWriteMany"
 
-    # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
-    limits: {}
-    # Use the following if you would like to add limits to the custodian product
-    # limits:
-    #   memory: "4Gi"
-    #   cpu: "2"
+      # Set the size of the requested persistent volume claim
+      storage: "200Gi"
 
-    requests: {}
-    # Use the following if you would like to add requests to the custodian product
-    # requests:
-    #   memory: "2Gi"
-    #   cpu: "1"
+    # Optional storage class settings required for async support. Leave defaults if not running async
+    storageClass:
+      # Add optional annotations for the storage class
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
 
-    # Add custom additional mounts
-    additionalMounts: {}
-    # Example mount configuration from a secret
-    # additionalMounts:
-    #   volumeMounts:
-    #     - name: "mount-name"
-    #       mountPath: "/mount/path"
-    #   volumes:
-    #     - name: "mount-name"
-    #       secret:
-    #         secretName: "mount-secret"
+      # Example for AWS using EFS
+      provisioner: "efs.csi.aws.com"
+      parameters:
+        provisioningMode: "efs-ap"
+        fileSystemId: "insert your pre-made efs file system id"
+        directoryPerms: "700"
+      volumeBindingMode: "WaitForFirstConsumer"
 
-    # Configuration for node affinity
-    # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumenodeaffinity-v1-core
-    nodeAffinity: {}
-    # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
-    # and after on nodes with the label "limina"
-    # nodeAffinity:
-    #   preferredDuringSchedulingIgnoredDuringExecution:
-    #     - preference:
-    #         matchExpressions:
-    #           - key: "nodetype"
-    #             operator: "In"
-    #             values:
-    #               - "limina"
-    #       weight: 1
-    #     - preference:
-    #         matchExpressions:
-    #           - key: "nodetype"
-    #             operator: "In"
-    #             values:
-    #               - "limina-spot"
-    #       weight: 100
+      # Example for Azure using file storage
+      # provisioner: "file.csi.azure.com"
+      # mountOptions:
+      #   - dir_mode=0777
+      #   - file_mode=0777
+      #   - uid=0
+      #   - gid=0
+      #   - mfsymlinks
+      #   - cache=strict
+      # parameters:
+      #   skuName: "Standard_LRS"
+      #   shareName: "limina-async-files"
 
-    # Optional configuration for custodian product anti affinity
-    podAntiAffinity: {}
-    # Example configuration for pod anti affinity:
-    # podAntiAffinity:
-    #   requiredDuringSchedulingIgnoredDuringExecution:
-    #     - topologyKey: "kubernetes.io/hostname"
-    #       labelSelector:
-    #         matchExpressions:
-    #           - key: "app"
-    #             operator: "In"
-    #             values:
-    #               - "limina-custodian"
+  # This section contains all information related to the Limina async api product
+  # This is disabled by default, and only required if you set async.shared.enabled to true
+  api:
+    # Update environment variables to customize your deployment
+    configmap:
+      data: []
+      # data:
+      #   - name: "LOG_LEVEL"
+      #     value: "info"
+      #   - name: "INTERVAL_SECONDS_PUB_JOB_EXPIRE"
+      #     value: 300
 
-    topologySpreadConstraints:
-      values: []
-      # Use the following if you would like to spread your pods evenly across your infrastructure zones
-      # values:
-      #   - labelSelector:
-      #       matchLabels:
-      #         app.kubernetes.io/name: "limina"
-      #         app.kubernetes.io/instance: "limina"
-      #     matchLabelKeys:
-      #       - "pod-template-hash"
-      #     maxSkew: 1
-      #     topologyKey: "topology.kubernetes.io/zone"
-      #     whenUnsatisfiable: "ScheduleAnyway"
+    # Configuration related to the api service
+    service:
+      # Add custom annotations to the service
+      annotations: {}
+      # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
+      # annotations:
+      #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+      # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
+      # annotations:
+      #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 
-    tolerations:
-      values: []
-      # Use the following if you have added a taint to your nodes of app=limina
-      # values:
-      #   - key: app
-      #     operator: "Equal"
-      #     value: "limina"
-      #     effect: "NoSchedule"
+      # Set the type for the service
+      type: "ClusterIP"
 
-# This section contains all information related to the Limina processor product
-# This is disabled by default, and only required if you plan to use the async support
-processor:
-  # Update environment variables to customize your deployment
-  configmap:
-    data:
-      - name: "WORKER_ROLE"
-        value: "processor"
-      - name: "DEID_URL"
-        value: "http://localhost:8080"
-      # - name: "LOG_LEVEL"
-      #   value: "info"
-      # - name: "REQUEST_TIMEOUT"
-      #   value: 300
+      # Set the port for the service
+      port: 80
 
-  # Configuration related to the api deployment
-  deployment:
-    image:
-      name: "afp-worker"
-      pullPolicy: "IfNotPresent"
-      # It is recommended to pin to a specific version for production environments
-      tag: "0.10.4"
+      # Set the target port for the deployment
+      targetPort: 80
 
-    # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
-    limits: {}
-    # Use the following if you would like to add limits to the custodian product
-    # limits:
-    #   memory: "4Gi"
-    #   cpu: "2"
+    # Configuration for a kubernetes ingress for the api product
+    # Requires haproxy-ingress and cert-manager to be installed
+    ingress:
+      # Enable or disable the ingress configuration
+      enabled: false
+      # Set the class to handle the ingress traffic. Default to haproxy
+      ingressClassName: "haproxy"
+      # Set your own custom annotations, see https://www.haproxy.com/documentation/kubernetes-ingress/community/configuration-reference/ingress/
+      annotations: {}
+      # Example to rate limit to 15 requests per minute
+      # annotations:
+      #   haproxy.org/rate-limit-requests: 15
+      #   haproxy.org/rate-limit-period: "1m"
+      # Provision selfsigned certificates by default via cert-manager. Change if you wish to customize
+      selfsigned: true
+      # Replace this with the domain name for the ingress
+      host: "api.ingress.domain.com"
+      tlsSecretName: "limina-api-tls"
 
-    requests: {}
-    # Use the following if you would like to add requests to the custodian product
-    # requests:
-    #   memory: "2Gi"
-    #   cpu: "1"
+    # Configuration related to the api deployment
+    deployment:
+      replicaCount: 1
 
-# Configuration for the External Secrets operator
+      # Specify selector matchLabels for api
+      selector:
+        matchLabels:
+          app: "limina-api"
+
+      # Specify a deployment strategy
+      strategy:
+        type: "RollingUpdate"
+
+      # Add custom pod annotations to the api deployment
+      podAnnotations: {}
+      # Example annotations
+      # podAnnotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value1"
+
+      # Specify a node selector to deploy limina api
+      nodeSelector: {}
+      # nodeSelector:
+      #   container: "limina-api"
+
+      image:
+        # Optionally override the top level repository for this image
+        repository: ""
+        name: "afp-api"
+        pullPolicy: "IfNotPresent"
+        # It is recommended to pin to a specific version for production environments
+        tag: "0.10.4"
+
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the api product
+      # limits:
+      #   memory: "4Gi"
+      #   cpu: "2"
+
+      requests: {}
+      # Use the following if you would like to add requests to the api product
+      # requests:
+      #   memory: "2Gi"
+      #   cpu: "1"
+
+      # Add custom additional mounts
+      additionalMounts: {}
+      # Example mount configuration from a secret
+      # additionalMounts:
+      #   volumeMounts:
+      #     - name: "mount-name"
+      #       mountPath: "/mount/path"
+      #   volumes:
+      #     - name: "mount-name"
+      #       secret:
+      #         secretName: "mount-secret"
+
+      # These are the values for liveness, startup and readiness probes
+      # https://kubernetes.io/docs/concepts/workloads/pods/probes/
+      # livenessProbe: {}
+      # Example livenessProbe. This is not recommended as it may cause pod instability
+      # livenessProbe:
+      #   httpGet:
+      #     path: "/healthz"
+      #     port: http
+      #     scheme: "HTTP"
+      #   initialDelaySeconds: 5
+      #   periodSeconds: 60
+      #   failureThreshold: 5
+      #   timeoutSeconds: 1
+      startupProbe:
+        # Note: You should expect to see warnings for startup probe failures in the pod events until the container starts
+        httpGet:
+          path: "/healthz"
+          port: http
+          scheme: "HTTP"
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 23
+        timeoutSeconds: 1
+      readinessProbe:
+        httpGet:
+          path: "/healthz"
+          port: http
+          scheme: "HTTP"
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        failureThreshold: 3
+        timeoutSeconds: 1
+
+      # Configuration for node affinity
+      # https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+      nodeAffinity: {}
+      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+      # and after on nodes with the label "limina"
+      # nodeAffinity:
+      #   preferredDuringSchedulingIgnoredDuringExecution:
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina"
+      #       weight: 1
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina-spot"
+      #       weight: 100
+
+      # Optional configuration for api product anti affinity
+      podAntiAffinity: {}
+      # Example podAntiAffinity:
+      # podAntiAffinity:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-api"
+
+      topologySpreadConstraints:
+        values: []
+        # Use the following if you would like to spread your pods evenly across your infrastructure zones
+        # values:
+        #   - labelSelector:
+        #       matchLabels:
+        #         app.kubernetes.io/name: "limina"
+        #         app.kubernetes.io/instance: "limina"
+        #     matchLabelKeys:
+        #       - "pod-template-hash"
+        #     maxSkew: 1
+        #     topologyKey: "topology.kubernetes.io/zone"
+        #     whenUnsatisfiable: "ScheduleAnyway"
+
+      tolerations:
+        values: []
+        # Use the following if you have added a taint to your nodes of app=limina
+        # values:
+        #   - key: app
+        #     operator: "Equal"
+        #     value: "limina"
+        #     effect: "NoSchedule"
+
+  # This section contains all information related to the Limina custodian product
+  # This is disabled by default, and only required if you set async.shared.enabled to true
+  custodian:
+    # Update environment variables to customize your deployment
+    configmap:
+      data:
+        - name: "WORKER_ROLE"
+          value: "custodian"
+
+    # Configuration related to the custodian deployment
+    deployment:
+      replicaCount: 1
+
+      # Specify selector matchLabels for custodian
+      selector:
+        matchLabels:
+          app: "limina-custodian"
+
+      # Specify a deployment strategy
+      strategy:
+        type: "RollingUpdate"
+
+      # Add custom pod annotations to the custodian deployment
+      podAnnotations: {}
+      # Example annotations
+      # podAnnotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value1"
+
+      # Specify a node selector to deploy limina custodian
+      nodeSelector: {}
+      # nodeSelector:
+      #   container: "limina-custodian"
+
+      image:
+        # Optionally override the top level repository for this image
+        repository: ""
+        name: "afp-worker"
+        pullPolicy: "IfNotPresent"
+        # It is recommended to pin to a specific version for production environments
+        tag: "0.10.4"
+
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the custodian product
+      # limits:
+      #   memory: "4Gi"
+      #   cpu: "2"
+
+      requests: {}
+      # Use the following if you would like to add requests to the custodian product
+      # requests:
+      #   memory: "2Gi"
+      #   cpu: "1"
+
+      # Add custom additional mounts
+      additionalMounts: {}
+      # Example mount configuration from a secret
+      # additionalMounts:
+      #   volumeMounts:
+      #     - name: "mount-name"
+      #       mountPath: "/mount/path"
+      #   volumes:
+      #     - name: "mount-name"
+      #       secret:
+      #         secretName: "mount-secret"
+
+      # Configuration for node affinity
+      # https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+      nodeAffinity: {}
+      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+      # and after on nodes with the label "limina"
+      # nodeAffinity:
+      #   preferredDuringSchedulingIgnoredDuringExecution:
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina"
+      #       weight: 1
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina-spot"
+      #       weight: 100
+
+      # Optional configuration for custodian product anti affinity
+      podAntiAffinity: {}
+      # Example configuration for pod anti affinity:
+      # podAntiAffinity:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-custodian"
+
+      topologySpreadConstraints:
+        values: []
+        # Use the following if you would like to spread your pods evenly across your infrastructure zones
+        # values:
+        #   - labelSelector:
+        #       matchLabels:
+        #         app.kubernetes.io/name: "limina"
+        #         app.kubernetes.io/instance: "limina"
+        #     matchLabelKeys:
+        #       - "pod-template-hash"
+        #     maxSkew: 1
+        #     topologyKey: "topology.kubernetes.io/zone"
+        #     whenUnsatisfiable: "ScheduleAnyway"
+
+      tolerations:
+        values: []
+        # Use the following if you have added a taint to your nodes of app=limina
+        # values:
+        #   - key: app
+        #     operator: "Equal"
+        #     value: "limina"
+        #     effect: "NoSchedule"
+
+  # This section contains all information related to the Limina processor product
+  # This is disabled by default, and only required if you set async.shared.enabled to true
+  processor:
+    # Update environment variables to customize your deployment
+    configmap:
+      data:
+        - name: "WORKER_ROLE"
+          value: "processor"
+        - name: "DEID_URL"
+          value: "http://localhost:8080"
+        # - name: "LOG_LEVEL"
+        #   value: "info"
+        # - name: "REQUEST_TIMEOUT"
+        #   value: 300
+
+    # Configuration related to the processor container, which runs alongside the core container in the core deployment
+    deployment:
+      image:
+        # Optionally override the top level repository for this image
+        repository: ""
+        name: "afp-worker"
+        pullPolicy: "IfNotPresent"
+        # It is recommended to pin to a specific version for production environments
+        tag: "0.10.4"
+
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the processor container
+      # limits:
+      #   memory: "4Gi"
+      #   cpu: "2"
+
+      requests: {}
+      # Use the following if you would like to add requests to the processor container
+      # requests:
+      #   memory: "2Gi"
+      #   cpu: "1"
+
+# This section contains all information related to the Limina Platform products
+platform:
+  # Configuration shared by the middleware, worker and ui
+  shared:
+    # Enable or disable the Limina Platform, defaults to false
+    enabled: false
+
+    # Specify the mount path of the shared file store for the middleware and worker
+    # This is passed to the containers as the STORAGE_PATH environment variable
+    mountPath: "/mnt/limina-filestore"
+
+    # Optional service account used by the middleware, worker and ui pods
+    # Use this to grant cloud permissions to the platform, e.g. IAM Roles for Service Accounts (IRSA) on AWS or Workload Identity on Azure
+    serviceAccount:
+      # Create a service account for the platform pods
+      create: false
+      # Name of the service account
+      # If create is true and this is empty, defaults to <fullname>-platform
+      # If create is false, set this to use an existing service account, or leave empty to use the namespace default service account
+      name: ""
+      # Add optional annotations for the service account
+      annotations: {}
+      # Example annotation for AWS IRSA
+      # annotations:
+      #   eks.amazonaws.com/role-arn: "arn:aws:iam::111122223333:role/limina-platform"
+      # Example annotation for Azure Workload Identity
+      # annotations:
+      #   azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
+
+    # Configmap data shared by the middleware and worker
+    # LIMINA_CORE_URL and STORAGE_PATH are set automatically from this chart, but can be overridden here
+    configmap:
+      data:
+        - name: "REDIS_HOST"
+          value: "redis-url"
+        - name: "REDIS_PORT"
+          value: 6379
+        - name: "REDIS_SSL"
+          value: "true"
+        - name: "POSTGRES_HOST"
+          value: "postgres-url"
+        - name: "POSTGRES_PORT"
+          value: 5432
+        - name: "POSTGRES_DB"
+          value: "platform"
+        # - name: "LOG_LEVEL"
+        #   value: "INFO"
+        # - name: "LIMINA_CORE_REQUEST_TIMEOUT"
+        #   value: 3600
+        # - name: "STATE_EX_SUBMITTED"
+        #   value: 43200 # 12 hours
+        # - name: "STATE_EX_COMPLETED"
+        #   value: 3600 # 1 hour
+        # - name: "EXPORT_TTL_SECONDS"
+        #   value: 432000 # 5 days
+
+    # Secrets shared by the middleware and worker, added to their environment variables
+    # If you enable externalSecrets.platform, this section will be ignored
+    secrets:
+      # Add optional annotations for the platform secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+
+      # If you enable externalSecrets.platform this section will be ignored
+      data: []
+      # data:
+      #   - name: "REDIS_PASSWORD"
+      #     value: ""
+      #   - name: "POSTGRES_USER"
+      #     value: ""
+      #   - name: "POSTGRES_PASSWORD"
+      #     value: ""
+
+    # Persistent volume claim settings for the shared platform file store
+    pvc:
+      # Add optional annotations for the pvc
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+
+      # Specify the access mode for the persistent volume claim
+      accessModes: "ReadWriteMany"
+
+      # Set the size of the requested persistent volume claim
+      storage: "100Gi"
+
+    # Storage class settings for the shared platform file store
+    storageClass:
+      # Add optional annotations for the storage class
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+
+      # Example for AWS using EFS
+      provisioner: "efs.csi.aws.com"
+      parameters:
+        provisioningMode: "efs-ap"
+        fileSystemId: "insert your pre-made efs file system id"
+        directoryPerms: "700"
+        uid: "1000"
+        gid: "1000"
+      volumeBindingMode: "WaitForFirstConsumer"
+      # Set to "Retain" to keep the underlying files when the pvc is deleted
+      reclaimPolicy: "Retain"
+
+      # Example for Azure using file storage
+      # provisioner: "file.csi.azure.com"
+      # mountOptions:
+      #   - dir_mode=0777
+      #   - file_mode=0777
+      #   - uid=1000
+      #   - gid=1000
+      #   - mfsymlinks
+      #   - cache=strict
+      # parameters:
+      #   skuName: "Standard_LRS"
+      #   shareName: "limina-platform-files"
+
+  # This section contains all information related to the Limina Platform middleware product
+  # This is disabled by default, and only required if you set platform.shared.enabled to true
+  middleware:
+    # Update environment variables to customize your deployment
+    configmap:
+      data:
+        # Example using Google Auth provider. See https://docs.getlimina.ai for more providers
+        - name: "AUTH_PROVIDERS"
+          value: '[{"name": "google", "issuer": "https://accounts.google.com", "audience": "your-google-client-id"}]'
+        # - name: "LOG_LEVEL_MIDDLEWARE"
+        #   value: "INFO"
+
+    # Database migrations, run as an init container before the middleware starts
+    migrations:
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the migrations container
+      # limits:
+      #   memory: "200Mi"
+      #   cpu: "200m"
+
+      requests: {}
+      # Use the following if you would like to add requests to the migrations container
+      # requests:
+      #   memory: "100Mi"
+      #   cpu: "100m"
+
+    # Configuration related to the middleware service
+    service:
+      # Add custom annotations to the service
+      annotations: {}
+
+      # Set the type for the service
+      type: "ClusterIP"
+
+      # Set the port for the service
+      port: 80
+
+      # Set the target port for the deployment
+      targetPort: 80
+
+    # Configuration related to the middleware deployment
+    deployment:
+      replicaCount: 1
+
+      # Specify selector matchLabels for middleware
+      selector:
+        matchLabels:
+          app: "limina-middleware"
+
+      # Specify a deployment strategy
+      strategy:
+        type: "RollingUpdate"
+
+      # Add custom pod annotations to the middleware deployment
+      podAnnotations: {}
+      # Example annotations
+      # podAnnotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value1"
+
+      # Specify a node selector to deploy limina middleware
+      nodeSelector: {}
+      # nodeSelector:
+      #   container: "limina-platform"
+
+      image:
+        # Optionally override the top level repository for this image
+        repository: ""
+        name: "limina-middleware"
+        pullPolicy: "IfNotPresent"
+        # It is recommended to pin to a specific version for production environments
+        tag: "0.36.0"
+
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the middleware product
+      # limits:
+      #   memory: "200Mi"
+      #   cpu: "1"
+
+      requests: {}
+      # Use the following if you would like to add requests to the middleware product
+      # requests:
+      #   memory: "100Mi"
+      #   cpu: "100m"
+
+      # Add custom additional mounts
+      additionalMounts: {}
+      # Example mount configuration from a secret
+      # additionalMounts:
+      #   volumeMounts:
+      #     - name: "mount-name"
+      #       mountPath: "/mount/path"
+      #   volumes:
+      #     - name: "mount-name"
+      #       secret:
+      #         secretName: "mount-secret"
+
+      # These are the values for liveness, startup and readiness probes
+      # https://kubernetes.io/docs/concepts/workloads/pods/probes/
+      # livenessProbe: {}
+      # startupProbe: {}
+      readinessProbe:
+        httpGet:
+          path: "/healthz"
+          port: http
+          scheme: "HTTP"
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        failureThreshold: 3
+        timeoutSeconds: 1
+
+      # Configuration for node affinity
+      # https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+      nodeAffinity: {}
+      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+      # and after on nodes with the label "limina"
+      # nodeAffinity:
+      #   preferredDuringSchedulingIgnoredDuringExecution:
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina"
+      #       weight: 1
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina-spot"
+      #       weight: 100
+
+      # Optional configuration for middleware product anti affinity
+      podAntiAffinity: {}
+      # Example podAntiAffinity:
+      # podAntiAffinity:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-middleware"
+
+      topologySpreadConstraints:
+        values: []
+        # Use the following if you would like to spread your pods evenly across your infrastructure zones
+        # values:
+        #   - labelSelector:
+        #       matchLabels:
+        #         app: "limina-middleware"
+        #     matchLabelKeys:
+        #       - "pod-template-hash"
+        #     maxSkew: 1
+        #     topologyKey: "topology.kubernetes.io/zone"
+        #     whenUnsatisfiable: "ScheduleAnyway"
+
+      tolerations:
+        values: []
+        # Use the following if you have added a taint to your nodes of app=limina
+        # values:
+        #   - key: app
+        #     operator: "Equal"
+        #     value: "limina"
+        #     effect: "NoSchedule"
+
+  # This section contains all information related to the Limina Platform ui product
+  # This is disabled by default, and only required if you set platform.shared.enabled to true
+  ui:
+    # Update environment variables to customize your deployment
+    # MIDDLEWARE_URL is set automatically from this chart, but can be overridden here
+    configmap:
+      data:
+        - name: "LIMINA_MODE"
+          value: "PLATFORM"
+        # Replace this with the external URL users will reach the ui on, usually https://<platform.ui.ingress.host>
+        - name: "BETTER_AUTH_URL"
+          value: "https://platform.ingress.domain.com"
+        # - name: "LOG_LEVEL"
+        #   value: "info"
+
+    # These secrets will be added to the environment variables for the Limina ui deployment
+    # If you enable externalSecrets.platform, this section will be ignored
+    secrets:
+      # Add optional annotations for the ui secret. For more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+
+      # If you enable externalSecrets.platform, you can ignore this section and populate via externalSecrets.platform.ui.env
+      data: []
+      # data:
+      #   - name: "BETTER_AUTH_SECRET"
+      #     value: ""
+      #   - name: "GOOGLE_CLIENT_ID"
+      #     value: ""
+      #   - name: "GOOGLE_CLIENT_SECRET"
+      #     value: ""
+
+    # Configuration related to the ui service
+    service:
+      # Add custom annotations to the service
+      annotations: {}
+      # Set the Azure load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
+      # annotations:
+      #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+      # Set the AWS load balancer to be internal only, if you are planning to use an ingress to manage traffic with service type of LoadBalancer
+      # annotations:
+      #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+      # Set the type for the service
+      type: "ClusterIP"
+
+      # Set the port for the service
+      port: 80
+
+      # Set the target port for the deployment. The container port is named "http", which the probes below reference
+      targetPort: 3000
+
+    # Configuration for a kubernetes ingress for the ui product
+    # Requires haproxy-ingress and cert-manager to be installed
+    ingress:
+      # Enable or disable the ingress configuration
+      enabled: false
+      # Set the class to handle the ingress traffic. Default to haproxy
+      ingressClassName: "haproxy"
+      # Set your own custom annotations, see https://www.haproxy.com/documentation/kubernetes-ingress/community/configuration-reference/ingress/
+      annotations: {}
+      # Example to rate limit to 15 requests per minute
+      # annotations:
+      #   haproxy.org/rate-limit-requests: 15
+      #   haproxy.org/rate-limit-period: "1m"
+      # Example for the AWS Load Balancer Controller with an ACM certificate (set ingressClassName to "alb" and selfsigned to false)
+      # annotations:
+      #   alb.ingress.kubernetes.io/scheme: "internet-facing"
+      #   alb.ingress.kubernetes.io/target-type: "ip"
+      #   alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+      #   alb.ingress.kubernetes.io/ssl-redirect: "443"
+      #   alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:region:111122223333:certificate/certificate-id"
+      #   alb.ingress.kubernetes.io/healthcheck-path: "/healthz"
+      # Provision selfsigned certificates by default via cert-manager. Change if you wish to customize
+      selfsigned: true
+      # Replace this with the domain name for the ingress
+      host: "platform.ingress.domain.com"
+      tlsSecretName: "limina-ui-tls"
+
+    # Configuration related to the ui deployment
+    deployment:
+      replicaCount: 1
+
+      # Specify selector matchLabels for ui
+      selector:
+        matchLabels:
+          app: "limina-ui"
+
+      # Specify a deployment strategy
+      strategy:
+        type: "RollingUpdate"
+
+      # Add custom pod annotations to the ui deployment
+      podAnnotations: {}
+      # Example annotations
+      # podAnnotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value1"
+
+      # Specify a node selector to deploy limina ui
+      nodeSelector: {}
+      # nodeSelector:
+      #   container: "limina-platform"
+
+      image:
+        # Optionally override the top level repository for this image
+        repository: ""
+        name: "limina-ui"
+        pullPolicy: "IfNotPresent"
+        # It is recommended to pin to a specific version for production environments
+        tag: "0.36.0"
+
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the ui product
+      # limits:
+      #   memory: "400Mi"
+      #   cpu: "1"
+
+      requests: {}
+      # Use the following if you would like to add requests to the ui product
+      # requests:
+      #   memory: "100Mi"
+      #   cpu: "250m"
+
+      # Add custom additional mounts
+      additionalMounts: {}
+      # Example mount configuration from a secret
+      # additionalMounts:
+      #   volumeMounts:
+      #     - name: "mount-name"
+      #       mountPath: "/mount/path"
+      #   volumes:
+      #     - name: "mount-name"
+      #       secret:
+      #         secretName: "mount-secret"
+
+      # These are the values for liveness, startup and readiness probes
+      # https://kubernetes.io/docs/concepts/workloads/pods/probes/
+      # livenessProbe: {}
+      # startupProbe: {}
+      # Example readinessProbe
+      readinessProbe:
+        httpGet:
+          path: "/healthz"
+          port: http
+          scheme: "HTTP"
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        failureThreshold: 3
+        timeoutSeconds: 1
+
+      # Configuration for node affinity
+      # https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+      nodeAffinity: {}
+      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+      # and after on nodes with the label "limina"
+      # nodeAffinity:
+      #   preferredDuringSchedulingIgnoredDuringExecution:
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina"
+      #       weight: 1
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina-spot"
+      #       weight: 100
+
+      # Optional configuration for ui product anti affinity
+      podAntiAffinity: {}
+      # Example podAntiAffinity:
+      # podAntiAffinity:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-ui"
+
+      topologySpreadConstraints:
+        values: []
+        # Use the following if you would like to spread your pods evenly across your infrastructure zones
+        # values:
+        #   - labelSelector:
+        #       matchLabels:
+        #         app: "limina-ui"
+        #     matchLabelKeys:
+        #       - "pod-template-hash"
+        #     maxSkew: 1
+        #     topologyKey: "topology.kubernetes.io/zone"
+        #     whenUnsatisfiable: "ScheduleAnyway"
+
+      tolerations:
+        values: []
+        # Use the following if you have added a taint to your nodes of app=limina
+        # values:
+        #   - key: app
+        #     operator: "Equal"
+        #     value: "limina"
+        #     effect: "NoSchedule"
+
+  # This section contains all information related to the Limina Platform worker product
+  # This is disabled by default, and only required if you set platform.shared.enabled to true
+  worker:
+    # Update environment variables to customize your deployment
+    configmap:
+      data: []
+      # data:
+      #   - name: "LOG_LEVEL_WORKERPOOL"
+      #     value: "INFO"
+      #   - name: "WORKER_BASE_PROCESSOR"
+      #     value: 1
+      #   - name: "WORKER_MAX_PROCESSOR"
+      #     value: 2
+      #   - name: "SCALE_THRESHOLD_PROCESSOR"
+      #     value: 100
+      #   - name: "WORKER_JOB_RATIO_PROCESSOR"
+      #     value: 50
+
+    # Configuration related to the worker deployment
+    deployment:
+      replicaCount: 1
+
+      # Specify selector matchLabels for worker
+      selector:
+        matchLabels:
+          app: "limina-worker"
+
+      # Specify a deployment strategy
+      strategy:
+        type: "Recreate"
+
+      # Add custom pod annotations to the worker deployment
+      podAnnotations: {}
+      # Example annotations
+      # podAnnotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value1"
+
+      # Specify a node selector to deploy limina worker
+      nodeSelector: {}
+      # nodeSelector:
+      #   container: "limina-platform"
+
+      image:
+        # Optionally override the top level repository for this image
+        repository: ""
+        name: "limina-worker"
+        pullPolicy: "IfNotPresent"
+        # It is recommended to pin to a specific version for production environments
+        tag: "0.36.0"
+
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
+      limits: {}
+      # Use the following if you would like to add limits to the worker product
+      # limits:
+      #   memory: "400Mi"
+      #   cpu: "1"
+
+      requests: {}
+      # Use the following if you would like to add requests to the worker product
+      # requests:
+      #   memory: "200Mi"
+      #   cpu: "100m"
+
+      # Add custom additional mounts
+      additionalMounts: {}
+      # Example mount configuration from a secret
+      # additionalMounts:
+      #   volumeMounts:
+      #     - name: "mount-name"
+      #       mountPath: "/mount/path"
+      #   volumes:
+      #     - name: "mount-name"
+      #       secret:
+      #         secretName: "mount-secret"
+
+      # Configuration for node affinity
+      # https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+      nodeAffinity: {}
+      # Use the following to example to attempt to schedule nodes first on nodes with the label "limina-spot"
+      # and after on nodes with the label "limina"
+      # nodeAffinity:
+      #   preferredDuringSchedulingIgnoredDuringExecution:
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina"
+      #       weight: 1
+      #     - preference:
+      #         matchExpressions:
+      #           - key: "nodetype"
+      #             operator: "In"
+      #             values:
+      #               - "limina-spot"
+      #       weight: 100
+
+      # Optional configuration for worker product anti affinity
+      podAntiAffinity: {}
+      # Example podAntiAffinity:
+      # podAntiAffinity:
+      #   requiredDuringSchedulingIgnoredDuringExecution:
+      #     - topologyKey: "kubernetes.io/hostname"
+      #       labelSelector:
+      #         matchExpressions:
+      #           - key: "app"
+      #             operator: "In"
+      #             values:
+      #               - "limina-worker"
+
+      topologySpreadConstraints:
+        values: []
+        # Use the following if you would like to spread your pods evenly across your infrastructure zones
+        # values:
+        #   - labelSelector:
+        #       matchLabels:
+        #         app: "limina-worker"
+        #     matchLabelKeys:
+        #       - "pod-template-hash"
+        #     maxSkew: 1
+        #     topologyKey: "topology.kubernetes.io/zone"
+        #     whenUnsatisfiable: "ScheduleAnyway"
+
+      tolerations:
+        values: []
+        # Use the following if you have added a taint to your nodes of app=limina
+        # values:
+        #   - key: app
+        #     operator: "Equal"
+        #     value: "limina"
+        #     effect: "NoSchedule"
+
+# Configuration for the External Secrets Operator
+# Each product (core, async and platform) has its own enabled switch, so you can use the External Secrets Operator for some products and plain kubernetes secrets for others
 externalSecrets:
-  # Specifies whether to use configuration for the external secrets operator
-  enabled: false
-  # Specifies the secret store to retrieve secrets
+  # Specifies the secret store to retrieve secrets for every product
   secretStoreName: "limina-store"
+  # Optionally create the SecretStore named by secretStoreName in the release namespace
+  # It is only created when the External Secrets Operator is enabled for at least one product below
+  # Leave create as false if you create the SecretStore yourself, as described in the README
+  # If a SecretStore with this name already exists in the namespace, delete it or choose a new secretStoreName before setting create to true
+  secretStore:
+    # Create the SecretStore with this chart
+    create: false
+    # Optional annotations for the SecretStore object
+    annotations: {}
+    # Example annotations
+    # annotations:
+    #   annotation-key1: "annotation-value1"
+    #   annotation-key2: "annotation-value2"
+    # Service account the SecretStore uses to authenticate to the secret store provider
+    # The service account is not used by any pod. Its annotations bind it to a cloud identity, e.g. an IAM role (IRSA) on AWS or a managed identity (Workload Identity) on Azure
+    # For the aws provider, the service account is added to provider.aws.auth.jwt.serviceAccountRef unless provider.aws.auth is set
+    # For the azurekv provider with authType "WorkloadIdentity", it is added to provider.azurekv.serviceAccountRef unless that is set
+    # For any other provider, reference the service account name in the provider configuration yourself
+    serviceAccount:
+      # Create a service account for the SecretStore in the release namespace
+      create: true
+      # Name of the service account
+      # If create is true and this is empty, defaults to <fullname>-secret-store
+      # If create is false, set this to use an existing service account in the release namespace,
+      # or leave empty to authenticate with the identity of the External Secrets Operator controller instead
+      # The cloud identity must trust this service account, e.g. the IAM role trust policy subject is system:serviceaccount:<namespace>:<name>
+      name: ""
+      # Annotations for the service account, required to bind it to a cloud identity
+      annotations: {}
+      # Example annotation for AWS IRSA
+      # annotations:
+      #   eks.amazonaws.com/role-arn: "arn:aws:iam::111122223333:role/limina-secret-store"
+      # Example annotations for Azure Workload Identity
+      # annotations:
+      #   azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
+      #   azure.workload.identity/tenant-id: "00000000-0000-0000-0000-000000000000"
+    # The provider configuration of the SecretStore, rendered into spec.provider. Required if create is true
+    # See https://external-secrets.io/latest/provider/aws-secrets-manager/ and https://external-secrets.io/latest/provider/azure-key-vault/
+    provider: {}
+    # Example AWS Secrets Manager provider, authenticating with the IAM role of the service account above
+    # provider:
+    #   aws:
+    #     service: "SecretsManager"
+    #     region: "ca-central-1"
+    # Example Azure Key Vault provider, authenticating with workload identity through the service account above
+    # provider:
+    #   azurekv:
+    #     authType: "WorkloadIdentity"
+    #     vaultUrl: "https://your-key-vault.vault.azure.net/"
   # Configuration details for the docker credentials secret
   dockerCredential:
+    # Enables or disables the external secret for the docker credentials
+    # If enabled, the imagePullSecrets secret is created by the External Secrets Operator instead of manually
+    enabled: false
     # Optional annotations for the docker credential externalsecret and secret objects
     annotations: {}
     # Example annotations
@@ -737,74 +1438,177 @@ externalSecrets:
     serverProperty: "server"
     usernameProperty: "username"
     passwordProperty: "password"
-  # Configuration details for the license file
-  license:
-    # Optional annotations for the license externalsecret and secret objects
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-    # Set the refresh interval to check for updated secrets
-    refreshInterval: "1h"
-    # This is the reference to the name of the secret from the secret store
-    remoteRefKey: "limina-license"
-    licenseProperty: "license.json"
-  # Configuration for the optional Limina core environment secrets
+
+  # Configuration for the External Secrets Operator for the core product
   core:
-    # Enables or disables Limina environment secrets
+    # Enables or disables the External Secrets Operator for the core product
+    # If enabled, core.license and core.secrets are ignored, and are populated from the secret store instead
     enabled: false
-    # Optional annotations for the core deployment externalsecret and secret objects
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-    # Set the refresh interval to check for updated secrets
-    refreshInterval: "1h"
-    # This is the reference to the name of the secret from the secret store
-    # All properties will be added from the secret in the secret store to the container environment variables
-    remoteRefKey: "limina-core"
-  # Configuration for the shared Limina secrets, required if async is enabled
-  shared:
-    # Optional annotations for the shared externalsecret and secret objects
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-    # Set the refresh interval to check for updated secrets
-    refreshInterval: "1h"
-    # This is the reference to the name of the secret from the secret store
-    # All properties will be added from the secret in the secret store to the container environment variables
-    remoteRefKey: "limina-shared"
-  # Configuration for the Limina api product TLS secret
-  tlsApi:
-    # Enables or disables external secret for TLS
+    # Configuration details for the license file
+    license:
+      # Optional annotations for the license externalsecret and secret objects
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+      # Set the refresh interval to check for updated secrets
+      refreshInterval: "1h"
+      # This is the reference to the name of the secret from the secret store
+      remoteRefKey: "limina-license"
+      licenseProperty: "license.json"
+    # Configuration for the optional Limina core environment secrets
+    env:
+      # Enables or disables Limina environment secrets
+      enabled: false
+      # Optional annotations for the core deployment externalsecret and secret objects
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+      # Set the refresh interval to check for updated secrets
+      refreshInterval: "1h"
+      # This is the reference to the name of the secret from the secret store
+      # All properties will be added from the secret in the secret store to the container environment variables
+      remoteRefKey: "limina-core"
+    # Configuration for the Limina core product TLS secret
+    tls:
+      # Enables or disables external secret for TLS
+      enabled: false
+      # Optional annotations for the shared externalsecret and secret objects
+      annotations: {}
+      # Example annotations
+      # annotations:
+      #   annotation-key1: "annotation-value1"
+      #   annotation-key2: "annotation-value2"
+      # Set the refresh interval to check for updated secrets
+      refreshInterval: "1h"
+      # This is the reference to the name of the secret from the secret store
+      # All properties will be added from the secret in the secret store to the container environment variables
+      remoteRefKey: "limina-core-tls"
+
+  # Configuration for the External Secrets Operator for the async products
+  async:
+    # Enables or disables the External Secrets Operator for the async products
+    # If enabled, async.shared.secrets is ignored, and is populated from the secret store instead
     enabled: false
-    # Optional annotations for the shared externalsecret and secret objects
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-    # Set the refresh interval to check for updated secrets
-    refreshInterval: "1h"
-    # This is the reference to the name of the secret from the secret store
-    # All properties will be added from the secret in the secret store to the container environment variables
-    remoteRefKey: "limina-api-tls"
-  # Configuration for the Limina core product TLS secret
-  tlsCore:
-    # Enables or disables external secret for TLS
+    # Configuration for the secrets shared by the async products
+    shared:
+      # Configuration for the shared async secrets, required if async is enabled
+      env:
+        # Optional annotations for the shared externalsecret and secret objects
+        annotations: {}
+        # Example annotations
+        # annotations:
+        #   annotation-key1: "annotation-value1"
+        #   annotation-key2: "annotation-value2"
+        # Set the refresh interval to check for updated secrets
+        refreshInterval: "1h"
+        # This is the reference to the name of the secret from the secret store
+        # All properties will be added from the secret in the secret store to the container environment variables
+        remoteRefKey: "limina-shared"
+    # Configuration for the async api product
+    api:
+      # Configuration for the Limina async api product TLS secret
+      tls:
+        # Enables or disables external secret for TLS
+        enabled: false
+        # Optional annotations for the shared externalsecret and secret objects
+        annotations: {}
+        # Example annotations
+        # annotations:
+        #   annotation-key1: "annotation-value1"
+        #   annotation-key2: "annotation-value2"
+        # Set the refresh interval to check for updated secrets
+        refreshInterval: "1h"
+        # This is the reference to the name of the secret from the secret store
+        # All properties will be added from the secret in the secret store to the container environment variables
+        remoteRefKey: "limina-api-tls"
+
+  # Configuration for the External Secrets Operator for the platform products
+  platform:
+    # Enables or disables the External Secrets Operator for the platform products
+    # If enabled, platform.shared.secrets and platform.ui.secrets are ignored, and are populated from the secret store instead
     enabled: false
-    # Optional annotations for the shared externalsecret and secret objects
-    annotations: {}
-    # Example annotations
-    # annotations:
-    #   annotation-key1: "annotation-value1"
-    #   annotation-key2: "annotation-value2"
-    # Set the refresh interval to check for updated secrets
-    refreshInterval: "1h"
-    # This is the reference to the name of the secret from the secret store
-    # All properties will be added from the secret in the secret store to the container environment variables
-    remoteRefKey: "limina-core-tls"
+    # Configuration for the secrets shared by the middleware and worker
+    shared:
+      # Configuration for the shared Limina Platform secrets used by the middleware and worker, required if the platform is enabled
+      env:
+        # Optional annotations for the platform externalsecret and secret objects
+        annotations: {}
+        # Example annotations
+        # annotations:
+        #   annotation-key1: "annotation-value1"
+        #   annotation-key2: "annotation-value2"
+        # Set the refresh interval to check for updated secrets
+        refreshInterval: "1h"
+        # This is the reference to the name of the secret from the secret store
+        # Used for every property below that does not set its own remoteRefKey
+        remoteRefKey: "limina-platform"
+        # The properties to pull from the secret store into the middleware and worker environment variables
+        # secretKey is the environment variable name, and property is the name of the property in your secret store that holds its value
+        # Update each property to match your secret store. If property is not set, it defaults to secretKey
+        # Set remoteRefKey on a property to read it from a different secret in the secret store. If not set, it defaults to the remoteRefKey above
+        # Set this to [] to add every property from the remoteRefKey secret above instead
+        properties:
+          - secretKey: "REDIS_PASSWORD"
+            property: "REDIS_PASSWORD" # Enter the property containing your redis password
+          - secretKey: "POSTGRES_USER"
+            property: "username" # Enter the property containing your PostgreSQL user
+          - secretKey: "POSTGRES_PASSWORD"
+            property: "password" # Enter the property containing your PostgreSQL password
+        # Example reading the redis password and the database credentials from separate secrets
+        # e.g. the database credentials from the secret that AWS RDS manages for the master user
+        # properties:
+        #   - secretKey: "REDIS_PASSWORD"
+        #     remoteRefKey: "limina-redis"
+        #     property: "password"
+        #   - secretKey: "POSTGRES_USER"
+        #     remoteRefKey: "rds!db-00000000-0000-0000-0000-000000000000"
+        #     property: "username"
+        #   - secretKey: "POSTGRES_PASSWORD"
+        #     remoteRefKey: "rds!db-00000000-0000-0000-0000-000000000000"
+        #     property: "password"
+    # Configuration for the platform ui product
+    ui:
+      # Configuration for the Limina Platform ui secrets, required if the platform is enabled
+      env:
+        # Optional annotations for the ui externalsecret and secret objects
+        annotations: {}
+        # Example annotations
+        # annotations:
+        #   annotation-key1: "annotation-value1"
+        #   annotation-key2: "annotation-value2"
+        # Set the refresh interval to check for updated secrets
+        refreshInterval: "1h"
+        # This is the reference to the name of the secret from the secret store
+        # Used for every property below that does not set its own remoteRefKey
+        remoteRefKey: "limina-ui"
+        # The properties to pull from the secret store into the ui environment variables
+        # secretKey is the environment variable name, and property is the name of the property in your secret store that holds its value
+        # Update each property to match your secret store. If property is not set, it defaults to secretKey
+        # Set remoteRefKey on a property to read it from a different secret in the secret store. If not set, it defaults to the remoteRefKey above
+        # Set this to [] to add every property from the remoteRefKey secret above instead
+        properties:
+          - secretKey: "BETTER_AUTH_SECRET"
+            property: "BETTER_AUTH_SECRET" # Enter the property containing your auth secret, a long random string
+          - secretKey: "GOOGLE_CLIENT_ID"
+            property: "GOOGLE_CLIENT_ID" # Enter the property containing your Google OAuth client id
+          - secretKey: "GOOGLE_CLIENT_SECRET"
+            property: "GOOGLE_CLIENT_SECRET" # Enter the property containing your Google OAuth client secret
+      # Configuration for the Limina Platform ui TLS secret
+      tls:
+        # Enables or disables external secret for TLS
+        enabled: false
+        # Optional annotations for the ui tls externalsecret and secret objects
+        annotations: {}
+        # Example annotations
+        # annotations:
+        #   annotation-key1: "annotation-value1"
+        #   annotation-key2: "annotation-value2"
+        # Set the refresh interval to check for updated secrets
+        refreshInterval: "1h"
+        # This is the reference to the name of the secret from the secret store
+        # The secret must contain a PKCS#12 certificate bundle, see the README for details
+        remoteRefKey: "limina-ui-tls"

@@ -1,0 +1,30 @@
+{{- if and .Values.platform.ui.ingress.enabled .Values.platform.shared.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "limina.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+  {{- with .Values.platform.ui.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.platform.ui.ingress.ingressClassName }}
+  rules:
+    - host: {{ .Values.platform.ui.ingress.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "limina.fullname" . }}-ui
+                port:
+                  number: {{ .Values.platform.ui.service.port }}
+            path: "/"
+            pathType: "Prefix"
+  tls:
+    - hosts:
+      - {{ .Values.platform.ui.ingress.host }}
+      secretName: {{ .Values.platform.ui.ingress.tlsSecretName }}
+{{- end }}

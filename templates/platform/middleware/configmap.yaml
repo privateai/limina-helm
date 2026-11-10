@@ -1,0 +1,13 @@
+{{- if and .Values.platform.shared.enabled .Values.platform.middleware.configmap.data }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "limina.fullname" . }}-middleware
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+data:
+{{- range .Values.platform.middleware.configmap.data }}
+  {{ .name }}: {{ .value | quote }}
+{{- end }}
+{{- end }}

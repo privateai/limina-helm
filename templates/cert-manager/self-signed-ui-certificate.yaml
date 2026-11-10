@@ -1,0 +1,25 @@
+{{- if and .Values.platform.shared.enabled .Values.platform.ui.ingress.enabled .Values.platform.ui.ingress.selfsigned }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "limina.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  secretName: {{ .Values.platform.ui.ingress.tlsSecretName }}
+  privateKey:
+    rotationPolicy: Always
+  commonName: {{ .Values.platform.ui.ingress.host }}
+  dnsNames:
+    - {{ .Values.platform.ui.ingress.host }}
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+{{- end }}
