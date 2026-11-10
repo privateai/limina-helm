@@ -1,0 +1,101 @@
+{{- if .Values.platform.shared.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "limina.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.platform.ui.deployment.replicaCount }}
+  selector:
+    {{- with .Values.platform.ui.deployment.selector.matchLabels }}
+    matchLabels:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  strategy:
+    type: {{ .Values.platform.ui.deployment.strategy.type }}
+  template:
+    metadata:
+      {{- with .Values.platform.ui.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.platform.ui.deployment.selector.matchLabels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with include "limina.platform.serviceAccountName" . }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets.name }}
+      {{- with .Values.platform.ui.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "limina.fullname" . }}-ui
+          image: {{ include "limina.image" (dict "image" .Values.platform.ui.deployment.image "root" .) | quote }}
+          imagePullPolicy: {{ .Values.platform.ui.deployment.image.pullPolicy }}
+          {{- if or .Values.platform.ui.deployment.limits .Values.platform.ui.deployment.requests }}
+          resources:
+            {{- with .Values.platform.ui.deployment.limits }}
+            limits:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with .Values.platform.ui.deployment.requests }}
+            requests:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.platform.ui.service.targetPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "limina.fullname" . }}-ui
+            - secretRef:
+                name: {{ include "limina.fullname" . }}-ui
+          {{- with .Values.platform.ui.deployment.additionalMounts.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.platform.ui.deployment.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.platform.ui.deployment.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.platform.ui.deployment.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.platform.ui.deployment.additionalMounts.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.platform.ui.deployment.nodeAffinity .Values.platform.ui.deployment.podAntiAffinity }}
+      affinity:
+        {{- with .Values.platform.ui.deployment.nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.platform.ui.deployment.podAntiAffinity }}
+        podAntiAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.platform.ui.deployment.topologySpreadConstraints.values }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.platform.ui.deployment.tolerations.values }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,24 +1,24 @@
-{{- if .Values.shared.async.enabled }}
+{{- if .Values.async.shared.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "limina.fullname" . }}-api
   namespace: {{ .Release.Namespace }}
-  {{- with .Values.api.service.annotations }}
+  {{- with .Values.async.api.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.api.service.type }}
+  type: {{ .Values.async.api.service.type }}
   ports:
-    - port: {{ .Values.api.service.port }}
-      targetPort: {{ .Values.api.service.targetPort }}
+    - port: {{ .Values.async.api.service.port }}
+      targetPort: {{ .Values.async.api.service.targetPort }}
       protocol: TCP
       name: http
   selector:
-    {{- with .Values.api.deployment.selector.matchLabels }}
+    {{- with .Values.async.api.deployment.selector.matchLabels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
 {{- end }}

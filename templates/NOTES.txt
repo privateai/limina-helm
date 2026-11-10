@@ -27,13 +27,13 @@ To test the core service connectivity, run the following
       curl http://$CORE_SERVICE_IP:{{ .Values.core.service.port }}
 {{- end }}
 
-{{- if .Values.api.ingress.enabled }}
+{{- if and .Values.async.shared.enabled .Values.async.api.ingress.enabled }}
 
 To test the api ingress connectivity, run the following
       export API_INGRESS_HOST=$(kubectl get ingress --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-api --template "{{"{{ range .status.loadBalancer.ingress }}{{ .hostname }}{{ end }}"}}")
-      curl --connect-to {{ .Values.api.ingress.host }}:443:$API_INGRESS_HOST:443 {{ if .Values.api.ingress.selfsigned }}-k {{ end }}https://{{ .Values.api.ingress.host }}/
+      curl --connect-to {{ .Values.async.api.ingress.host }}:443:$API_INGRESS_HOST:443 {{ if .Values.async.api.ingress.selfsigned }}-k {{ end }}https://{{ .Values.async.api.ingress.host }}/
 
-{{- else if eq "LoadBalancer" .Values.api.service.type }}
+{{- else if and .Values.async.shared.enabled (eq "LoadBalancer" .Values.async.api.service.type) }}
 
 NOTE: It may take a few minutes for the LoadBalancer IP to be available.
 
@@ -46,5 +46,27 @@ To test the api service connectivity, run the following
   {{- else if eq "Azure" .Values.cloudProvider }}
       export API_SERVICE_IP=$(kubectl get service --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-api --template "{{"{{ range .status.loadBalancer.ingress }}{{ .ip }}{{ end }}"}}")
   {{- end }}
-      curl http://$API_SERVICE_IP:{{ .Values.api.service.port }}
+      curl http://$API_SERVICE_IP:{{ .Values.async.api.service.port }}
+{{- end }}
+
+{{- if and .Values.platform.shared.enabled .Values.platform.ui.ingress.enabled }}
+
+To test the platform ui ingress connectivity, run the following
+      export UI_INGRESS_HOST=$(kubectl get ingress --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-ui --template "{{"{{ range .status.loadBalancer.ingress }}{{ .hostname }}{{ end }}"}}")
+      curl --connect-to {{ .Values.platform.ui.ingress.host }}:443:$UI_INGRESS_HOST:443 {{ if .Values.platform.ui.ingress.selfsigned }}-k {{ end }}https://{{ .Values.platform.ui.ingress.host }}/
+
+{{- else if and .Values.platform.shared.enabled (eq "LoadBalancer" .Values.platform.ui.service.type) }}
+
+NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+
+To get the status of the platform ui load balancer, run the following
+      kubectl --namespace {{ .Release.Namespace }} get service {{ include "limina.fullname" . }}-ui
+
+To test the platform ui service connectivity, run the following
+  {{- if eq "AWS" .Values.cloudProvider }}
+      export UI_SERVICE_IP=$(kubectl get service --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-ui --template "{{"{{ range .status.loadBalancer.ingress }}{{ .hostname }}{{ end }}"}}")
+  {{- else if eq "Azure" .Values.cloudProvider }}
+      export UI_SERVICE_IP=$(kubectl get service --namespace {{ .Release.Namespace }} {{ include "limina.fullname" . }}-ui --template "{{"{{ range .status.loadBalancer.ingress }}{{ .ip }}{{ end }}"}}")
+  {{- end }}
+      curl http://$UI_SERVICE_IP:{{ .Values.platform.ui.service.port }}
 {{- end }}

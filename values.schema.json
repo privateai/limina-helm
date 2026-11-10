@@ -5,7 +5,11 @@
     "required": [
         "cloudProvider"
     ],
+    "additionalProperties": false,
     "properties": {
+        "global": {
+            "type": "object"
+        },
         "cloudProvider": {
             "type": "string",
             "enum": [
@@ -13,6 +17,147 @@
                 "Azure",
                 "Other"
             ]
+        },
+        "nameOverride": {
+            "type": "string"
+        },
+        "fullnameOverride": {
+            "type": "string"
+        },
+        "repository": {
+            "type": "string"
+        },
+        "imagePullSecrets": {
+            "type": "object"
+        },
+        "externalSecrets": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "dockerCredential": {
+                    "type": "object"
+                },
+                "secretStoreName": {
+                    "type": "string"
+                },
+                "secretStore": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "create": {
+                            "type": "boolean"
+                        },
+                        "annotations": {
+                            "type": "object"
+                        },
+                        "serviceAccount": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "create": {
+                                    "type": "boolean"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "annotations": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "provider": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "core": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "license": {
+                            "type": "object"
+                        },
+                        "env": {
+                            "type": "object"
+                        },
+                        "tls": {
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "async": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "shared": {
+                            "type": "object"
+                        },
+                        "api": {
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "platform": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "shared": {
+                            "type": "object"
+                        },
+                        "ui": {
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "core": {
+            "type": "object"
+        },
+        "async": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "shared": {
+                    "type": "object"
+                },
+                "api": {
+                    "type": "object"
+                },
+                "custodian": {
+                    "type": "object"
+                },
+                "processor": {
+                    "type": "object"
+                }
+            }
+        },
+        "platform": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "shared": {
+                    "type": "object"
+                },
+                "middleware": {
+                    "type": "object"
+                },
+                "ui": {
+                    "type": "object"
+                },
+                "worker": {
+                    "type": "object"
+                }
+            }
         }
     }
 }

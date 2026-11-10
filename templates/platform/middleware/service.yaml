@@ -1,0 +1,24 @@
+{{- if .Values.platform.shared.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "limina.fullname" . }}-middleware
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.platform.middleware.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.platform.middleware.service.type }}
+  ports:
+    - port: {{ .Values.platform.middleware.service.port }}
+      targetPort: {{ .Values.platform.middleware.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- with .Values.platform.middleware.deployment.selector.matchLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

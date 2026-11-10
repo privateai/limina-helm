@@ -1,4 +1,8 @@
-{{- if and .Values.shared.async.enabled .Values.shared.configmap.data }}
+{{- if .Values.async.shared.enabled }}
+{{- $data := dict "FILE_DIR" .Values.async.shared.mountPath }}
+{{- range .Values.async.shared.configmap.data }}
+{{- $_ := set $data .name .value }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,7 +11,7 @@ metadata:
   labels:
     {{- include "limina.labels" . | nindent 4 }}
 data:
-{{- range .Values.shared.configmap.data }}
-  {{ .name }}: {{ .value | quote }}
+{{- range $name, $value := $data }}
+  {{ $name }}: {{ $value | quote }}
 {{- end }}
 {{- end }}

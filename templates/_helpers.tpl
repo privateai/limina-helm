@@ -42,3 +42,72 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
+
+{{/*
+Image reference for a Limina components. Expects a dict with "image" and "root".
+*/}}
+{{- define "limina.image" -}}
+{{- printf "%s/%s:%v" (default .root.Values.repository .image.repository) .image.name .image.tag }}
+{{- end }}
+
+{{/*
+Service account name used by the Limina Platform pods.
+When create is true, defaults to <fullname>-platform unless a name is set.
+When create is false, returns the name of an existing service account, or empty to use the namespace default.
+*/}}
+{{- define "limina.platform.serviceAccountName" -}}
+{{- if .Values.platform.shared.serviceAccount.create }}
+{{- default (printf "%s-platform" (include "limina.fullname" .)) .Values.platform.shared.serviceAccount.name }}
+{{- else }}
+{{- .Values.platform.shared.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Returns "true" when the External Secrets Operator is enabled for at least one product, otherwise empty.
+*/}}
+{{- define "limina.externalSecretsEnabled" -}}
+{{- $es := .Values.externalSecrets }}
+{{- if or $es.dockerCredential.enabled $es.core.enabled $es.async.enabled $es.platform.enabled }}
+{{- true }}
+{{- end }}
+{{- end }}
+
+{{/*
+Service account name used by the SecretStore to authenticate to the secret store provider.
+When create is true, defaults to <fullname>-secret-store unless a name is set.
+When create is false, returns the name of an existing service account, or empty to use the identity of the External Secrets Operator controller.
+*/}}
+{{- define "limina.secretStore.serviceAccountName" -}}
+{{- if .Values.externalSecrets.secretStore.serviceAccount.create }}
+{{- default (printf "%s-secret-store" (include "limina.fullname" .)) .Values.externalSecrets.secretStore.serviceAccount.name }}
+{{- else }}
+{{- .Values.externalSecrets.secretStore.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Provider configuration of the SecretStore, rendered as YAML for spec.provider.
+Adds the SecretStore service account to the aws provider (auth.jwt.serviceAccountRef, unless auth is set)
+and to the azurekv provider with authType WorkloadIdentity (serviceAccountRef, unless set).
+*/}}
+{{- define "limina.secretStore.provider" -}}
+{{- $provider := deepCopy .Values.externalSecrets.secretStore.provider }}
+{{- $serviceAccountName := include "limina.secretStore.serviceAccountName" . }}
+{{- if $serviceAccountName }}
+{{- if and (kindIs "map" $provider.aws) (not (hasKey $provider.aws "auth")) }}
+{{- $_ := set $provider.aws "auth" (dict "jwt" (dict "serviceAccountRef" (dict "name" $serviceAccountName))) }}
+{{- end }}
+{{- if and (kindIs "map" $provider.azurekv) (eq (toString $provider.azurekv.authType) "WorkloadIdentity") (not (hasKey $provider.azurekv "serviceAccountRef")) }}
+{{- $_ := set $provider.azurekv "serviceAccountRef" (dict "name" $serviceAccountName) }}
+{{- end }}
+{{- end }}
+{{- toYaml $provider }}
+{{- end }}
+
+{{/*
+Persistent volume claim name for the Limina Platform file store.
+*/}}
+{{- define "limina.platform.claimName" -}}
+{{- printf "%s-platform" (include "limina.fullname" .) }}
+{{- end }}
