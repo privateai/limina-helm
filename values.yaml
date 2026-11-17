@@ -137,6 +137,8 @@ core:
     #   annotation-key2: "annotation-value1"
 
     # Recommended to create a specific node to run limina core, and add the label container=limina-core
+    # To allow limina core to run on any node, set nodeSelector: null in your values file
+    # ({} does not work: Helm merges maps, so the default container=limina-core label is kept)
     nodeSelector:
       container: "limina-core"
 

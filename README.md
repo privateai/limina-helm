@@ -40,9 +40,10 @@ core:
 kubectl get nodes
 kubectl label node NODE_NAME container=limina-core
 # Alternatively, to allow Limina core to run on any node, set the following in your custom values file
+# Use null rather than {}: Helm merges maps, so {} keeps the default container=limina-core selector
 core:
   deployment:
-    nodeSelector: {}
+    nodeSelector: null
 
 # Install the limina chart with a name and namespace of limina
 helm upgrade --install \
