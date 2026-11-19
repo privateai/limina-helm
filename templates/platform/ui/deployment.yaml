@@ -4,6 +4,10 @@ kind: Deployment
 metadata:
   name: {{ include "limina.fullname" . }}-ui
   namespace: {{ .Release.Namespace }}
+  {{- with .Values.platform.ui.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
     {{- include "limina.labels" . | nindent 4 }}
 spec:

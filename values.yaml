@@ -129,6 +129,12 @@ core:
     strategy:
       type: "RollingUpdate"
 
+    # Add custom annotations to the core deployment object itself. Use podAnnotations below for annotations on its pods
+    annotations: {}
+    # Example annotation for Stakater Reloader, which restarts the pods when a configmap or secret they use changes. See the README
+    # annotations:
+    #   reloader.stakater.com/auto: "true"
+
     # Add custom pod annotations to the deployment
     podAnnotations: {}
     # Example annotations
@@ -428,6 +434,12 @@ async:
       strategy:
         type: "RollingUpdate"
 
+      # Add custom annotations to the api deployment object itself. Use podAnnotations below for annotations on its pods
+      annotations: {}
+      # Example annotation for Stakater Reloader, which restarts the pods when a configmap or secret they use changes. See the README
+      # annotations:
+      #   reloader.stakater.com/auto: "true"
+
       # Add custom pod annotations to the api deployment
       podAnnotations: {}
       # Example annotations
@@ -585,6 +597,12 @@ async:
       # Specify a deployment strategy
       strategy:
         type: "RollingUpdate"
+
+      # Add custom annotations to the custodian deployment object itself. Use podAnnotations below for annotations on its pods
+      annotations: {}
+      # Example annotation for Stakater Reloader, which restarts the pods when a configmap or secret they use changes. See the README
+      # annotations:
+      #   reloader.stakater.com/auto: "true"
 
       # Add custom pod annotations to the custodian deployment
       podAnnotations: {}
@@ -906,6 +924,12 @@ platform:
       strategy:
         type: "RollingUpdate"
 
+      # Add custom annotations to the middleware deployment object itself. Use podAnnotations below for annotations on its pods
+      annotations: {}
+      # Example annotation for Stakater Reloader, which restarts the pods when a configmap or secret they use changes. See the README
+      # annotations:
+      #   reloader.stakater.com/auto: "true"
+
       # Add custom pod annotations to the middleware deployment
       podAnnotations: {}
       # Example annotations
@@ -1117,6 +1141,12 @@ platform:
       strategy:
         type: "RollingUpdate"
 
+      # Add custom annotations to the ui deployment object itself. Use podAnnotations below for annotations on its pods
+      annotations: {}
+      # Example annotation for Stakater Reloader, which restarts the pods when a configmap or secret they use changes. See the README
+      # annotations:
+      #   reloader.stakater.com/auto: "true"
+
       # Add custom pod annotations to the ui deployment
       podAnnotations: {}
       # Example annotations
@@ -1264,6 +1294,12 @@ platform:
       # Specify a deployment strategy
       strategy:
         type: "Recreate"
+
+      # Add custom annotations to the worker deployment object itself. Use podAnnotations below for annotations on its pods
+      annotations: {}
+      # Example annotation for Stakater Reloader, which restarts the pods when a configmap or secret they use changes. See the README
+      # annotations:
+      #   reloader.stakater.com/auto: "true"
 
       # Add custom pod annotations to the worker deployment
       podAnnotations: {}
@@ -1544,6 +1580,7 @@ externalSecrets:
         #   annotation-key1: "annotation-value1"
         #   annotation-key2: "annotation-value2"
         # Set the refresh interval to check for updated secrets
+        # If the database password is rotated automatically, e.g. by AWS RDS, use a shorter interval such as "5m", since new database connections fail until the new password is synced. See the README
         refreshInterval: "1h"
         # This is the reference to the name of the secret from the secret store
         # Used for every property below that does not set its own remoteRefKey
@@ -1561,7 +1598,8 @@ externalSecrets:
           - secretKey: "POSTGRES_PASSWORD"
             property: "password" # Enter the property containing your PostgreSQL password
         # Example reading the redis password and the database credentials from separate secrets
-        # e.g. the database credentials from the secret that AWS RDS manages for the master user
+        # e.g. the database credentials from the secret that AWS RDS manages and rotates when the master password is managed in AWS Secrets Manager
+        # remoteRefKey can be the secret name, as below, or its ARN
         # properties:
         #   - secretKey: "REDIS_PASSWORD"
         #     remoteRefKey: "limina-redis"
