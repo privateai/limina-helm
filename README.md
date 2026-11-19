@@ -327,6 +327,65 @@ helm upgrade --install \
   --version 0.2.0
 ```
 
+#### Database password rotation
+If your PostgreSQL database runs on AWS RDS with the master password managed in AWS Secrets Manager, RDS keeps the master credentials in a secret named `rds!db-<id>` and rotates the password automatically, every 7 days by default. Rather than copying the new password into your own secret after every rotation, you can have the External Secrets Operator read the database credentials directly from the RDS-managed secret. This requires `externalSecrets.platform.enabled`. With plain kubernetes secrets, you have to update `platform.shared.secrets` and run `helm upgrade` after every rotation.
+
+- Find the ARN of the RDS-managed secret
+```console
+aws rds describe-db-instances \
+  --db-instance-identifier enter_db_instance_identifier \
+  --query 'DBInstances[0].MasterUserSecret.SecretArn' \
+  --output text
+```
+
+- Allow the IAM identity your SecretStore authenticates with to call `secretsmanager:GetSecretValue` on that ARN. If you chose a customer managed KMS key for the master user secret, it also needs `kms:Decrypt` on that key. The default `aws/secretsmanager` key needs no extra permission
+
+- Point `POSTGRES_USER` and `POSTGRES_PASSWORD` at the RDS-managed secret, which stores them in the `username` and `password` properties. `remoteRefKey` can be the secret name or its ARN. Shorten `refreshInterval` as well: RDS invalidates the old password as soon as it rotates, so new database connections fail until the External Secrets Operator syncs the new one
+```yaml
+externalSecrets:
+  platform:
+    enabled: true
+    shared:
+      env:
+        refreshInterval: "5m"
+        remoteRefKey: "limina-platform-env"
+        properties:
+          - secretKey: "REDIS_PASSWORD"
+          - secretKey: "POSTGRES_USER"
+            remoteRefKey: "rds!db-00000000-0000-0000-0000-000000000000"
+            property: "username"
+          - secretKey: "POSTGRES_PASSWORD"
+            remoteRefKey: "rds!db-00000000-0000-0000-0000-000000000000"
+            property: "password"
+```
+
+- The middleware and worker read the credentials as environment variables, which are only loaded when a container starts. After the External Secrets Operator updates the kubernetes secret, the pods keep using the old password until they are restarted. We recommend installing [Stakater Reloader](https://github.com/stakater/Reloader), which watches configmaps and secrets and performs a rolling restart of the deployments that use them when they change, so a rotation needs no manual steps
+```console
+helm repo add stakater https://stakater.github.io/stakater-charts
+helm repo update
+helm upgrade --install reloader stakater/reloader \
+  --namespace reloader \
+  --create-namespace
+```
+
+- Then annotate the middleware and worker deployments so Reloader restarts them when their configmaps or secrets change
+```yaml
+platform:
+  middleware:
+    deployment:
+      annotations:
+        reloader.stakater.com/auto: "true"
+  worker:
+    deployment:
+      annotations:
+        reloader.stakater.com/auto: "true"
+```
+
+To restart only when the platform secret changes, use `secret.reloader.stakater.com/reload: "limina-platform"` instead (the secret is named after the release, `limina-platform` for a release named `limina`). Every deployment in the chart accepts `deployment.annotations`, so you can annotate the ui, core and async deployments the same way to pick up other rotated secrets. If you don't install Reloader, restart the deployments yourself after each rotation, once the External Secrets Operator has synced the new password
+```console
+kubectl rollout restart deployment/limina-middleware deployment/limina-worker --namespace limina
+```
+
 
 ### Ingress Controller
 If you would like to set up an external ingress to enable external traffic to reach the Limina deployment, you must enable the haproxy-ingress and cert-manager helm charts in the values.yaml file. Additionally, a sample ingress deployment file is included, and can be deployed with self-signed certificates for testing.
@@ -583,7 +642,7 @@ Instead of applying the SecretStore and its service account with `kubectl`, you 
 
 By default the chart also creates a service account named after the release (`limina-secret-store` for a release named `limina`) that the SecretStore authenticates with. Add the annotations that bind it to your cloud identity under `externalSecrets.secretStore.serviceAccount.annotations`. For the `aws` provider and for the `azurekv` provider with `authType: "WorkloadIdentity"`, the chart references the service account in the provider configuration for you. For other providers, reference it yourself. The cloud identity must trust the service account:
 
-- AWS: the IAM role trust policy must allow `sts:AssumeRoleWithWebIdentity` from your cluster OIDC provider with the subject `system:serviceaccount:limina:limina-secret-store`, and the role needs `secretsmanager:GetSecretValue` on your secrets (plus `kms:Decrypt` for any secret encrypted with a customer managed key, such as the secret AWS RDS manages for the master user)
+- AWS: the IAM role trust policy must allow `sts:AssumeRoleWithWebIdentity` from your cluster OIDC provider with the subject `system:serviceaccount:limina:limina-secret-store`, and the role needs `secretsmanager:GetSecretValue` on your secrets (plus `kms:Decrypt` for any secret encrypted with a customer managed key). This includes the secret AWS RDS manages for the master user if you read the database credentials from it, as described in [Database password rotation](#database-password-rotation)
 - Azure: create the federated credential with the subject `system:serviceaccount:limina:limina-secret-store`, instead of creating the `azure-keyvault` service account above
 
 ```yaml
