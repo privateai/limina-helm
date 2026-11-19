@@ -28,7 +28,7 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.2.0 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.3.0 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the core.license.data section of the custom values.yaml file with single quotes surrounding, as per below
 core:
@@ -50,7 +50,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.2.0
+  --version 0.3.0
 ```
 
 ## Testing
@@ -141,7 +141,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.2.0
+  --version 0.3.0
 ```
 
 
@@ -188,7 +188,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.2.0
+  --version 0.3.0
 ```
 
 
@@ -324,7 +324,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.2.0
+  --version 0.3.0
 ```
 
 #### Database password rotation
@@ -442,7 +442,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.2.0
+  --version 0.3.0
 ```
 
 ### External Secrets Operator
@@ -699,5 +699,5 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.2.0
+  --version 0.3.0
 ```
