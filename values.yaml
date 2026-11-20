@@ -908,8 +908,8 @@ platform:
       # Set the port for the service
       port: 80
 
-      # Set the target port for the deployment
-      targetPort: 80
+      # Set the port the middleware container listens on. The chart passes it to the middleware as API_PORT
+      targetPort: 8080
 
     # Configuration related to the middleware deployment
     deployment:
@@ -948,7 +948,7 @@ platform:
         name: "limina-middleware"
         pullPolicy: "IfNotPresent"
         # It is recommended to pin to a specific version for production environments
-        tag: "0.36.0"
+        tag: "0.37.0"
 
       # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
       limits: {}
@@ -1165,7 +1165,7 @@ platform:
         name: "limina-ui"
         pullPolicy: "IfNotPresent"
         # It is recommended to pin to a specific version for production environments
-        tag: "0.36.0"
+        tag: "0.37.0"
 
       # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
       limits: {}
@@ -1319,7 +1319,7 @@ platform:
         name: "limina-worker"
         pullPolicy: "IfNotPresent"
         # It is recommended to pin to a specific version for production environments
-        tag: "0.36.0"
+        tag: "0.37.0"
 
       # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits
       limits: {}

@@ -82,6 +82,9 @@ spec:
             - name: http
               containerPort: {{ .Values.platform.middleware.service.targetPort }}
               protocol: TCP
+          env:
+            - name: API_PORT
+              value: {{ .Values.platform.middleware.service.targetPort | quote }}
           envFrom:
             - configMapRef:
                 name: {{ include "limina.fullname" . }}-middleware

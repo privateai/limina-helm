@@ -28,7 +28,7 @@ kubectl -n limina create secret docker-registry crprivateaiprod-creds \
 helm registry login crprivateaiprod.azurecr.io
 
 # Create a custom values file for your specific installation
-helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.3.0 > "$(date +%Y%m%d).values.yaml"
+helm show values oci://crprivateaiprod.azurecr.io/helm/limina:0.3.1 > "$(date +%Y%m%d).values.yaml"
 
 # Copy your license.json file contents and paste them into the core.license.data section of the custom values.yaml file with single quotes surrounding, as per below
 core:
@@ -50,7 +50,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.3.0
+  --version 0.3.1
 ```
 
 ## Testing
@@ -141,7 +141,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.3.0
+  --version 0.3.1
 ```
 
 
@@ -188,7 +188,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.3.0
+  --version 0.3.1
 ```
 
 
@@ -201,7 +201,7 @@ When enabled, the chart deploys:
 - **ui**: the web application, which talks to the middleware. This is the component you expose to users via an ingress
 - A shared persistent volume claim mounted by the middleware and worker, a shared configmap and secret, and an optional service account
 
-The chart sets `LIMINA_CORE_URL`, `STORAGE_PATH` and `MIDDLEWARE_URL` for you, so the components find each other without extra configuration.
+The chart sets `LIMINA_CORE_URL`, `STORAGE_PATH` and `MIDDLEWARE_URL` for you, so the components find each other without extra configuration. The middleware listens on port 8080. To change it, set `platform.middleware.service.targetPort`, and the chart passes it to the middleware as `API_PORT`.
 
 Prerequisites:
 - Your kubernetes cluster must have a CSI driver that allows multiple pods read/write access to the same file system
@@ -324,7 +324,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.3.0
+  --version 0.3.1
 ```
 
 #### Database password rotation
@@ -442,7 +442,7 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.3.0
+  --version 0.3.1
 ```
 
 ### External Secrets Operator
@@ -699,5 +699,5 @@ helm upgrade --install \
   limina oci://crprivateaiprod.azurecr.io/helm/limina \
   --namespace limina \
   -f "$(date +%Y%m%d).values.yaml" \
-  --version 0.3.0
+  --version 0.3.1
 ```
