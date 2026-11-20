@@ -201,7 +201,7 @@ When enabled, the chart deploys:
 - **ui**: the web application, which talks to the middleware. This is the component you expose to users via an ingress
 - A shared persistent volume claim mounted by the middleware and worker, a shared configmap and secret, and an optional service account
 
-The chart sets `LIMINA_CORE_URL`, `STORAGE_PATH` and `MIDDLEWARE_URL` for you, so the components find each other without extra configuration. The middleware listens on port 8080. To change it, set `platform.middleware.service.targetPort`, and the chart passes it to the middleware as `API_PORT`.
+The chart sets `LIMINA_CORE_URL`, `STORAGE_PATH` and `MIDDLEWARE_URL` for you, so the components find each other without extra configuration. The middleware listens on port 8080. To change it, set `platform.middleware.service.targetPort`, and the chart passes it to the middleware as `API_PORT`. You can set `API_PORT` in `platform.middleware.configmap.data` instead, and the chart points the container port and service at that value.
 
 Prerequisites:
 - Your kubernetes cluster must have a CSI driver that allows multiple pods read/write access to the same file system

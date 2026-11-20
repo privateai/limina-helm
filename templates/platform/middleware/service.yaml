@@ -14,7 +14,7 @@ spec:
   type: {{ .Values.platform.middleware.service.type }}
   ports:
     - port: {{ .Values.platform.middleware.service.port }}
-      targetPort: {{ .Values.platform.middleware.service.targetPort }}
+      targetPort: {{ include "limina.platform.middleware.port" . }}
       protocol: TCP
       name: http
   selector:

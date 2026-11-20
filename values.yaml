@@ -908,7 +908,8 @@ platform:
       # Set the port for the service
       port: 80
 
-      # Set the port the middleware container listens on. The chart passes it to the middleware as API_PORT
+      # Set the port the middleware container listens on. The chart passes it to the middleware as API_PORT.
+      # If you set API_PORT in the middleware or shared configmap data instead, that value is used and this one is ignored
       targetPort: 8080
 
     # Configuration related to the middleware deployment
