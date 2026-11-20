@@ -18,6 +18,8 @@ platform:
       data:
         - name: "LOG_LEVEL_MIDDLEWARE"
           value: "DEBUG"
+        - name: "API_PORT"
+          value: 9000
     migrations:
       requests:
         cpu: "100m"
