@@ -111,3 +111,24 @@ Persistent volume claim name for the Limina Platform file store.
 {{- define "limina.platform.claimName" -}}
 {{- printf "%s-platform" (include "limina.fullname" .) }}
 {{- end }}
+
+{{/*
+API_PORT set in the middleware's configmap data, or the platform shared configmap data, which envFrom loads last
+and so wins. Empty when neither sets it.
+*/}}
+{{- define "limina.platform.middleware.userPort" -}}
+{{- $port := "" }}
+{{- range (concat (.Values.platform.middleware.configmap.data | default list) (.Values.platform.shared.configmap.data | default list)) }}
+{{- if eq .name "API_PORT" }}
+{{- $port = toString .value }}
+{{- end }}
+{{- end }}
+{{- $port }}
+{{- end }}
+
+{{/*
+Port the middleware container listens on: a user-set API_PORT, else platform.middleware.service.targetPort.
+*/}}
+{{- define "limina.platform.middleware.port" -}}
+{{- default (toString .Values.platform.middleware.service.targetPort) (include "limina.platform.middleware.userPort" .) }}
+{{- end }}
