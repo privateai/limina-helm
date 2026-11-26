@@ -327,6 +327,24 @@ helm upgrade --install \
   --version 0.3.1
 ```
 
+#### Worker autoscaling
+The worker runs a fixed number of replicas (`platform.worker.deployment.replicaCount`) by default. To add and remove workers with the load, enable the horizontal pod autoscaler for the worker. The autoscaler compares the average cpu use of the worker pods with their cpu request, so you must set `platform.worker.deployment.requests.cpu`. To scale on memory as well, set `targetMemoryUtilizationPercentage` and `platform.worker.deployment.requests.memory`. Your cluster must run the [kubernetes metrics server](https://github.com/kubernetes-sigs/metrics-server), which many managed clusters, including AKS, include by default. On EKS, install the `metrics-server` add-on.
+```yaml
+platform:
+  worker:
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+    deployment:
+      requests:
+        cpu: "1"
+        memory: "2Gi"
+```
+
+When autoscaling is enabled, the chart leaves the replica count of the worker deployment to the autoscaler, so `helm upgrade` doesn't reset it. To control how quickly workers are added and removed, set `platform.worker.autoscaling.behavior`, see `values.yaml` for an example. If your cluster also runs a node autoscaler, it adds nodes when the new workers don't fit on the existing ones.
+
 #### Database password rotation
 If your PostgreSQL database runs on AWS RDS with the master password managed in AWS Secrets Manager, RDS keeps the master credentials in a secret named `rds!db-<id>` and rotates the password automatically, every 7 days by default. Rather than copying the new password into your own secret after every rotation, you can have the External Secrets Operator read the database credentials directly from the RDS-managed secret. This requires `externalSecrets.platform.enabled`. With plain kubernetes secrets, you have to update `platform.shared.secrets` and run `helm upgrade` after every rotation.
 
