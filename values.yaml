@@ -1283,8 +1283,40 @@ platform:
       #   - name: "WORKER_JOB_RATIO_PROCESSOR"
       #     value: 50
 
+    # Horizontal pod autoscaling for the worker, based on the average cpu and memory use of the worker pods
+    # Requires the kubernetes metrics server, see https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+    autoscaling:
+      # Enable or disable the horizontal pod autoscaler for the worker, defaults to false
+      # If enabled, platform.worker.deployment.replicaCount is ignored and the autoscaler sets the number of replicas
+      enabled: false
+      # The minimum number of worker replicas
+      minReplicas: 1
+      # The maximum number of worker replicas
+      maxReplicas: 3
+      # Add workers when the average cpu use exceeds this percentage of platform.worker.deployment.requests.cpu, which must be set
+      targetCPUUtilizationPercentage: 70
+      # Optionally add workers when the average memory use exceeds this percentage of platform.worker.deployment.requests.memory, which must be set
+      # targetMemoryUtilizationPercentage: 80
+      # Optional scaling behavior. For more details see https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior
+      behavior: {}
+      # Example to add at most 2 workers per minute, and remove 1 worker every 2 minutes after 10 minutes of low use
+      # behavior:
+      #   scaleUp:
+      #     stabilizationWindowSeconds: 120
+      #     policies:
+      #       - type: "Pods"
+      #         value: 2
+      #         periodSeconds: 60
+      #   scaleDown:
+      #     stabilizationWindowSeconds: 600
+      #     policies:
+      #       - type: "Pods"
+      #         value: 1
+      #         periodSeconds: 120
+
     # Configuration related to the worker deployment
     deployment:
+      # Sets the number of replicas for the worker deployment. Ignored if platform.worker.autoscaling.enabled is true
       replicaCount: 1
 
       # Specify selector matchLabels for worker

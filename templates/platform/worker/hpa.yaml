@@ -1,0 +1,51 @@
+{{- if and .Values.platform.shared.enabled .Values.platform.worker.autoscaling.enabled }}
+{{- $autoscaling := .Values.platform.worker.autoscaling }}
+{{- $requests := .Values.platform.worker.deployment.requests | default dict }}
+{{- if not (or $autoscaling.targetCPUUtilizationPercentage $autoscaling.targetMemoryUtilizationPercentage) }}
+{{- fail "platform.worker.autoscaling requires targetCPUUtilizationPercentage or targetMemoryUtilizationPercentage" }}
+{{- end }}
+{{- if and $autoscaling.targetCPUUtilizationPercentage (not $requests.cpu) }}
+{{- fail "platform.worker.autoscaling.targetCPUUtilizationPercentage requires platform.worker.deployment.requests.cpu" }}
+{{- end }}
+{{- if and $autoscaling.targetMemoryUtilizationPercentage (not $requests.memory) }}
+{{- fail "platform.worker.autoscaling.targetMemoryUtilizationPercentage requires platform.worker.deployment.requests.memory" }}
+{{- end }}
+{{- if gt (int $autoscaling.minReplicas) (int $autoscaling.maxReplicas) }}
+{{- fail "platform.worker.autoscaling.minReplicas must not be greater than maxReplicas" }}
+{{- end }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "limina.fullname" . }}-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "limina.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "limina.fullname" . }}-worker
+  minReplicas: {{ $autoscaling.minReplicas }}
+  maxReplicas: {{ $autoscaling.maxReplicas }}
+  metrics:
+    {{- with $autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ . }}
+    {{- end }}
+    {{- with $autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ . }}
+    {{- end }}
+  {{- with $autoscaling.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
